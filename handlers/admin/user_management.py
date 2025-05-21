@@ -3,7 +3,7 @@ from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.filters import StateFilter
+from aiogram.filters import StateFilter
 from db.crud import add_user, get_all_users, delete_user
 
 # Роутер для админских команд
