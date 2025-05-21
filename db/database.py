@@ -1,15 +1,17 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from db.models import Base
 
-# URL подключения к SQLite (асинхронный драйвер aiosqlite)
-DATABASE_URL = "sqlite+aiosqlite:///./users.db"
+# Указываем SQLite БД, можно заменить на PostgreSQL или другую при необходимости
+DATABASE_URL = "sqlite+aiosqlite:///./lunch_bot.db"
 
-# Создание движка SQLAlchemy
-engine = create_async_engine(DATABASE_URL, echo=False)
+# Создание асинхронного движка SQLAlchemy
+engine = create_async_engine(DATABASE_URL, echo=True)
 
-# Сессия для выполнения запросов к базе
-async_session = sessionmaker(
-    engine, 
-    expire_on_commit=False, 
-    class_=AsyncSession
-)
+# Фабрика асинхронных сессий
+async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+# Функция для создания всех таблиц (вызывается при старте)
+async def create_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
