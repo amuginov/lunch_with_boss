@@ -1,15 +1,10 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-def admin_keyboard() -> ReplyKeyboardMarkup:
-    """
-    Клавиатура для роли admin
-    """
+def admin_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="➕ Добавить пользователя")],
-            [KeyboardButton(text="➖ Удалить пользователя")],
-            [KeyboardButton(text="📋 Список пользователей")],
+            [KeyboardButton(text="Управление пользователями")],
+            [KeyboardButton(text="Настройки")]
         ],
-        resize_keyboard=True,
-        input_field_placeholder="Выберите действие:"
+        resize_keyboard=True
     )

@@ -1,7 +1,1 @@
-# Пакет для админских хэндлеров.
-# Здесь обычно регистрируем роутеры из других файлов, чтобы импортировать весь модуль целиком.
-
-from .user_management import router as admin_router
-
-# Чтобы при импорте handlers.admin импортировать все роутеры админа:
-__all__ = ["admin_router"]
+from .user_management import router

@@ -1,19 +1,10 @@
-from aiogram import Router, F
+# filepath: /Users/azatmuginov/lunch_with_boss_bot/handlers/help.py
+from aiogram import Router
 from aiogram.types import Message
+from aiogram.filters import Command
 
 router = Router()
 
-@router.message(F.text == "/help")
-async def cmd_help(message: Message):
-    """
-    Обработчик команды /help.
-    Выводит справочную информацию по боту.
-    """
-    help_text = (
-        "🍽 <b>Lunch Bot</b> — бот для бронирования обедов.\n\n"
-        "Доступные команды:\n"
-        "/start — начать работу с ботом\n"
-        "/help — показать эту справку\n\n"
-        "Если у вас есть вопросы, обратитесь к вашему администратору."
-    )
-    await message.answer(help_text)
+@router.message(Command(commands=["help"]))
+async def help_command(message: Message):
+    await message.answer("Вот список доступных команд:\n/start - Начать\n/help - Помощь")

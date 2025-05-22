@@ -1,11 +1,8 @@
-import asyncio
-from db.models import Base
 from db.database import engine
+from db.models import Base
 
-# Создание всех таблиц в базе данных
-async def create():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+def init_db():
+    Base.metadata.create_all(bind=engine)
 
-# Запуск скрипта
-asyncio.run(create())
+if __name__ == "__main__":
+    init_db()
