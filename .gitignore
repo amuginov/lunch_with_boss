@@ -1,3 +1,4 @@
 .env
 users.db
 myenv/
+lunch_bot.db
