@@ -1,19 +1,12 @@
-from keyboards.admin import admin_keyboard
-from keyboards.manager import manager_keyboard
-from keyboards.employee import employee_keyboard
-from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-def main_menu_keyboard(role: str) -> ReplyKeyboardMarkup:
+def main_menu_keyboard():
     """
-    Возвращает клавиатуру по роли пользователя,
-    используя отдельные модули клавиатур.
+    Клавиатура с основными командами.
     """
-    if role == "admin":
-        return admin_keyboard()
-    elif role == "manager":
-        return manager_keyboard()
-    elif role == "employee":
-        return employee_keyboard()
-    else:
-        # Если роль неизвестна — возвращаем пустую клавиатуру
-        return ReplyKeyboardMarkup(resize_keyboard=True)
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="/start"), KeyboardButton(text="/help")]
+        ],
+        resize_keyboard=True
+    )
