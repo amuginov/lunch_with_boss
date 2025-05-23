@@ -1,4 +1,3 @@
-# filepath: /Users/azatmuginov/lunch_with_boss_bot/handlers/help.py
 from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command

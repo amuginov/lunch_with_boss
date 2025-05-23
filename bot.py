@@ -2,15 +2,14 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 from config import BOT_TOKEN
-from handlers import common, help, admin, employee, manager
+from handlers import common, admin, employee, manager  # Удалён help
 
 async def main():
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
 
     # Регистрируем обработчики
-    dp.include_router(common.router)
-    dp.include_router(help.router)
+    dp.include_router(common.router)  # common теперь объединяет help и start
     dp.include_router(admin.router)
     dp.include_router(employee.router)
     dp.include_router(manager.router)
@@ -26,4 +25,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
