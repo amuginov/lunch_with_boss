@@ -10,13 +10,21 @@ def get_user_by_telegram_id(telegram_id: int):
         return session.query(User).filter(User.telegram_id == telegram_id).first()
 
 def create_user(telegram_id: int, full_name: str, phone_number: str, role: str):
+    try:
+        with SessionLocal() as session:
+            user = User(
+                telegram_id=telegram_id,
+                full_name=full_name,
+                phone_number=phone_number,
+                role=role
+            )
+            session.add(user)
+            session.commit()
+            return user
+    except Exception as e:
+        print(f"Ошибка при создании пользователя: {e}")
+        raise
+
+def get_all_users():
     with SessionLocal() as session:
-        user = User(
-            telegram_id=telegram_id,
-            full_name=full_name,
-            phone_number=phone_number,
-            role=role
-        )
-        session.add(user)
-        session.commit()
-        return user
+        return session.query(User).all()

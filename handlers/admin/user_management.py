@@ -1,26 +1,15 @@
 from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 from db.crud import create_user
 from states.user_states import UserCreationStates
 
 router = Router()
 
-@router.message(F.text == "Управление пользователями")
-async def manage_users(message: Message):
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="Добавить пользователя")],
-            [KeyboardButton(text="Назад")]
-        ],
-        resize_keyboard=True
-    )
-    await message.answer("Выберите действие:", reply_markup=keyboard)
-
 @router.message(F.text == "Добавить пользователя")
 async def start_user_creation(message: Message, state: FSMContext):
+    # Сохраняем telegram_id текущего пользователя
+    await state.update_data(telegram_id=message.from_user.id)
     await message.answer("Введите полное имя пользователя:")
     await state.set_state(UserCreationStates.waiting_for_full_name)
 
@@ -44,12 +33,29 @@ async def get_phone_number(message: Message, state: FSMContext):
 
 @router.message(UserCreationStates.waiting_for_role)
 async def get_role(message: Message, state: FSMContext):
-    user_data = await state.get_data()
-    create_user(
-        telegram_id=message.from_user.id,
-        full_name=user_data["full_name"],
-        phone_number=user_data["phone_number"],
-        role=message.text
-    )
-    await message.answer("Пользователь успешно добавлен!")
-    await state.clear()
+    try:
+        role = message.text.lower()
+        if role not in ["admin", "user", "manager"]:
+            await message.answer("Пожалуйста, выберите роль из предложенных вариантов: admin, user, manager.")
+            return
+
+        # Получаем данные из состояния
+        user_data = await state.get_data()
+
+        # Логируем данные для проверки
+        print(f"Создание пользователя с данными: Telegram ID={user_data['telegram_id']}, "
+              f"Full Name={user_data['full_name']}, Phone={user_data['phone_number']}, Role={role}")
+
+        # Создаем пользователя
+        create_user(
+            telegram_id=user_data["telegram_id"],  # Используем telegram_id из состояния
+            full_name=user_data["full_name"],
+            phone_number=user_data["phone_number"],
+            role=role
+        )
+
+        await message.answer("Пользователь успешно добавлен!")
+        await state.clear()
+    except Exception as e:
+        await message.answer(f"Произошла ошибка: {e}")
+        await state.clear()
