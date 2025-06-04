@@ -8,10 +8,18 @@ router = Router()
 
 @router.message(F.text == "Добавить пользователя")
 async def start_user_creation(message: Message, state: FSMContext):
-    # Сохраняем telegram_id текущего пользователя
-    await state.update_data(telegram_id=message.from_user.id)
-    await message.answer("Введите полное имя пользователя:")
-    await state.set_state(UserCreationStates.waiting_for_full_name)
+    await message.answer("Введите Telegram ID нового пользователя:")
+    await state.set_state(UserCreationStates.waiting_for_telegram_id)
+
+@router.message(UserCreationStates.waiting_for_telegram_id)
+async def get_telegram_id(message: Message, state: FSMContext):
+    try:
+        telegram_id = int(message.text)  # Проверяем, что введено число
+        await state.update_data(telegram_id=telegram_id)
+        await message.answer("Введите полное имя пользователя:")
+        await state.set_state(UserCreationStates.waiting_for_full_name)
+    except ValueError:
+        await message.answer("Пожалуйста, введите корректный Telegram ID (число).")
 
 @router.message(UserCreationStates.waiting_for_full_name)
 async def get_full_name(message: Message, state: FSMContext):
