@@ -1,8 +1,8 @@
 from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
-from db.crud import create_user, get_all_users  # Импортируем get_all_users
-from states.user_states import UserCreationStates
+from db.crud import create_user, get_all_users, delete_user_by_telegram_id  # Импортируем delete_user_by_telegram_id
+from states.user_states import UserCreationStates, UserDeletionStates  # Импортируем новое состояние
 
 router = Router()
 
@@ -85,3 +85,22 @@ async def list_users(message: Message):
         await message.answer(f"Список пользователей:\n\n{user_list}")
     except Exception as e:
         await message.answer(f"Произошла ошибка при получении списка пользователей: {e}")
+
+@router.message(F.text == "Удалить пользователя")
+async def start_user_deletion(message: Message, state: FSMContext):
+    await message.answer("Введите Telegram ID пользователя, которого вы хотите удалить:")
+    await state.set_state(UserDeletionStates.waiting_for_telegram_id)
+
+@router.message(UserDeletionStates.waiting_for_telegram_id)
+async def delete_user(message: Message, state: FSMContext):
+    try:
+        telegram_id = int(message.text)  # Проверяем, что введено число
+        delete_user_by_telegram_id(telegram_id)
+        await message.answer(f"Пользователь с Telegram ID {telegram_id} успешно удален.")
+        await state.clear()
+    except ValueError as e:
+        await message.answer(str(e))
+        await state.clear()
+    except Exception as e:
+        await message.answer(f"Произошла ошибка при удалении пользователя: {e}")
+        await state.clear()

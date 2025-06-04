@@ -4,8 +4,9 @@ def admin_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Добавить пользователя")],
-            [KeyboardButton(text="Настройки")],
-            [KeyboardButton(text="Список пользователей")]  # Новая кнопка
+            [KeyboardButton(text="Список пользователей")],
+            [KeyboardButton(text="Удалить пользователя")],  # Новая кнопка
+            [KeyboardButton(text="Настройки")]
         ],
         resize_keyboard=True
     )
