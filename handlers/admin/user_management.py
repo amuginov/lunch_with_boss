@@ -1,7 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
-from db.crud import create_user
+from db.crud import create_user, get_all_users  # Импортируем get_all_users
 from states.user_states import UserCreationStates
 
 router = Router()
@@ -67,3 +67,21 @@ async def get_role(message: Message, state: FSMContext):
     except Exception as e:
         await message.answer(f"Произошла ошибка: {e}")
         await state.clear()
+
+@router.message(F.text == "Список пользователей")
+async def list_users(message: Message):
+    try:
+        # Получаем список всех пользователей
+        users = get_all_users()
+
+        if not users:
+            await message.answer("Список пользователей пуст.")
+            return
+
+        # Формируем сообщение со списком пользователей
+        user_list = "\n".join(
+            [f"ID: {user.telegram_id}, ФИО: {user.full_name}, Телефон: {user.phone_number or 'Не указан'}, Роль: {user.role}" for user in users]
+        )
+        await message.answer(f"Список пользователей:\n\n{user_list}")
+    except Exception as e:
+        await message.answer(f"Произошла ошибка при получении списка пользователей: {e}")
