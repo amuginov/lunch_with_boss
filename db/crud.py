@@ -43,7 +43,7 @@ def delete_user_by_telegram_id(telegram_id: int):
         print(f"Ошибка при удалении пользователя: {e}")
         raise
 
-def create_lunch_slot(date: date, start_time: time):
+def create_lunch_slot(date: date, start_time: time, manager_id: int):
     try:
         with SessionLocal() as session:
             # Рассчитываем время окончания (длительность слота 1 час)
@@ -53,7 +53,8 @@ def create_lunch_slot(date: date, start_time: time):
                 date=date,
                 start_time=start_time,
                 end_time=end_time,
-                capacity=1  # Количество мест фиксировано
+                capacity=1,  # Количество мест фиксировано
+                manager_id=manager_id  # Привязка к менеджеру
             )
             session.add(slot)
             session.commit()

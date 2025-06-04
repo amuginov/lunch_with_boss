@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, BigInteger, Boolean, TIMESTAMP, Time, Date
+from sqlalchemy import Column, Integer, String, BigInteger, Boolean, TIMESTAMP, Time, Date, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
@@ -15,6 +16,9 @@ class User(Base):
     updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = Column(Boolean, default=True)
 
+    # Связь с LunchSlot
+    lunch_slots = relationship("LunchSlot", back_populates="manager")
+
 class LunchSlot(Base):
     __tablename__ = "lunch_slots"
     id = Column(Integer, primary_key=True, index=True)
@@ -23,3 +27,7 @@ class LunchSlot(Base):
     end_time = Column(Time, nullable=False)  # Время окончания формируется автоматически
     capacity = Column(Integer, default=1, nullable=False)  # Количество мест всегда 1
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
+
+    # Привязка к менеджеру
+    manager_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    manager = relationship("User", back_populates="lunch_slots")
