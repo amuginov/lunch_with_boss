@@ -3,6 +3,7 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart
 from db.crud import get_user_by_telegram_id
 from keyboards.admin import admin_keyboard
+from keyboards.manager import manager_keyboard  # Импортируем клавиатуру для менеджера
 
 router = Router()
 
@@ -15,6 +16,9 @@ async def start_command(message: Message):
         if user.role == "admin":
             # Отправляем клавиатуру администратора
             await message.answer("Добро пожаловать, администратор!", reply_markup=admin_keyboard())
+        elif user.role == "manager":
+            # Отправляем клавиатуру менеджера
+            await message.answer("Добро пожаловать, менеджер!", reply_markup=manager_keyboard())
         else:
             # Отправляем сообщение для обычного пользователя
             await message.answer("Добро пожаловать! Вы пользователь.")

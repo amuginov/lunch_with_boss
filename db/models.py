@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, BigInteger, Boolean, TIMESTAMP
+from sqlalchemy import Column, Integer, String, BigInteger, Boolean, TIMESTAMP, Time, Date
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
@@ -14,3 +14,12 @@ class User(Base):
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
     updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+
+class LunchSlot(Base):
+    __tablename__ = "lunch_slots"
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, nullable=False)
+    start_time = Column(Time, nullable=False)
+    end_time = Column(Time, nullable=False)  # Время окончания формируется автоматически
+    capacity = Column(Integer, default=1, nullable=False)  # Количество мест всегда 1
+    created_at = Column(TIMESTAMP, default=datetime.utcnow)

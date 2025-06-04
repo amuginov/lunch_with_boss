@@ -8,3 +8,7 @@ class UserCreationStates(StatesGroup):
 
 class UserDeletionStates(StatesGroup):
     waiting_for_telegram_id = State()  # Состояние для ввода Telegram ID пользователя для удаления
+
+class LunchSlotCreationStates(StatesGroup):
+    waiting_for_date = State()
+    waiting_for_start_time = State()
