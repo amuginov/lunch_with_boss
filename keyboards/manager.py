@@ -42,12 +42,20 @@ def generate_date_keyboard() -> ReplyKeyboardMarkup:
 
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+
 def generate_time_keyboard() -> ReplyKeyboardMarkup:
     """
-    Генерация клавиатуры с часами (с 09:00 до 17:00).
+    Генерация клавиатуры с часами (с 09:00 до 17:00) в 3 столбца.
     """
     keyboard = []
+    row = []
     for hour in range(9, 18):  # Часы с 09:00 до 17:00
         button_text = f"{hour:02d}:00"
-        keyboard.append([KeyboardButton(text=button_text)])
+        row.append(KeyboardButton(text=button_text))
+        if len(row) == 3:  # Если в строке 3 кнопки, добавляем её в клавиатуру
+            keyboard.append(row)
+            row = []
+    if row:  # Добавляем оставшиеся кнопки, если они есть
+        keyboard.append(row)
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
