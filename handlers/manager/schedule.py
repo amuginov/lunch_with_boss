@@ -4,7 +4,9 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from states.user_states import LunchSlotCreationStates
 from db.crud import create_lunch_slot, get_user_by_telegram_id
-from keyboards.manager import generate_date_keyboard, generate_time_keyboard
+from keyboards.manager import generate_date_keyboard, generate_time_keyboard, manager_keyboard  # Импортируем manager_keyboard
+from keyboards.admin import admin_keyboard  # Импортируем admin_keyboard
+from keyboards.employee import employee_keyboard  # Импортируем employee_keyboard
 from datetime import datetime
 
 router = Router()
@@ -38,8 +40,8 @@ async def get_time(message: Message, state: FSMContext):
 
         # Получаем пользователя из базы данных
         user = get_user_by_telegram_id(message.from_user.id)
-        if not user or user.role != "manager":
-            await message.answer("Вы не авторизованы как менеджер.")
+        if not user:
+            await message.answer("Вы не авторизованы.")
             return
 
         # Создаем слот
@@ -49,6 +51,15 @@ async def get_time(message: Message, state: FSMContext):
             manager_id=user.id  # Привязка к менеджеру
         )
         await message.answer("Слот успешно добавлен!")
+
+        # Возвращаем начальную клавиатуру в зависимости от роли
+        if user.role == "manager":
+            await message.answer("Возвращаюсь в главное меню.", reply_markup=manager_keyboard())
+        elif user.role == "admin":
+            await message.answer("Возвращаюсь в главное меню.", reply_markup=admin_keyboard())
+        elif user.role == "employee":
+            await message.answer("Возвращаюсь в главное меню.", reply_markup=employee_keyboard())
+
         await state.clear()
     except ValueError:
         await message.answer("Неверный формат времени. Попробуйте снова, выбрав время из кнопок.")
