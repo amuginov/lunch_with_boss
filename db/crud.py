@@ -1,6 +1,7 @@
 from datetime import date, time, timedelta, datetime
 from .database import SessionLocal
 from .models import User, LunchSlot
+from sqlalchemy.orm import joinedload
 
 def get_user(user_id: int):
     with SessionLocal() as session:
@@ -53,22 +54,15 @@ def create_lunch_slot(date: date, start_time: time, manager_id: int):
                 date=date,
                 start_time=start_time,
                 end_time=end_time,
-                capacity=1,  # Количество мест фиксировано
-                manager_id=manager_id  # Привязка к менеджеру
+                capacity=1,
+                manager_id=manager_id,
+                is_booked=False  # Новый слот всегда свободен
             )
             session.add(slot)
             session.commit()
             return slot
     except Exception as e:
         print(f"Ошибка при создании слота: {e}")
-        raise
-
-def get_all_lunch_slots():
-    try:
-        with SessionLocal() as session:
-            return session.query(LunchSlot).all()
-    except Exception as e:
-        print(f"Ошибка при получении слотов: {e}")
         raise
 
 def delete_lunch_slot(slot_id: int):
@@ -82,4 +76,15 @@ def delete_lunch_slot(slot_id: int):
             return True
     except Exception as e:
         print(f"Ошибка при удалении слота: {e}")
+        raise
+
+def get_all_lunch_slots():
+    """
+    Получить все слоты обедов из базы данных с предварительной загрузкой менеджеров.
+    """
+    try:
+        with SessionLocal() as session:
+            return session.query(LunchSlot).options(joinedload(LunchSlot.manager)).all()
+    except Exception as e:
+        print(f"Ошибка при получении слотов: {e}")
         raise

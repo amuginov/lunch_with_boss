@@ -31,3 +31,6 @@ class LunchSlot(Base):
     # Привязка к менеджеру
     manager_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     manager = relationship("User", back_populates="lunch_slots")
+
+    # Поле для проверки, забронирован ли слот
+    is_booked = Column(Boolean, default=False)

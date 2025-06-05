@@ -11,7 +11,7 @@ async def main():
     # Регистрируем обработчики
     dp.include_router(common.router)  # common теперь объединяет help и start
     dp.include_router(admin.router)
-    dp.include_router(employee.router)
+    dp.include_router(employee.router)  # booking.router уже включен в employee.router
     dp.include_router(manager.router)
 
     # Устанавливаем команды для бота
