@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from states.user_states import LunchBookingStates
 from db.crud import get_all_users, get_all_lunch_slots
@@ -7,6 +7,7 @@ from db.database import SessionLocal  # Импортируем SessionLocal
 from db.models import LunchSlot, User  # Импортируем LunchSlot и User
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from datetime import time  # Импортируем time
+from keyboards.employee import generate_booking_keyboard
 
 router = Router()
 
@@ -118,7 +119,7 @@ async def book_slot(message: Message, state: FSMContext):
 @router.message(F.text == "📋 Мои бронирования")
 async def view_bookings(message: Message):
     """
-    Показать все бронирования пользователя.
+    Показать все бронирования пользователя в виде кнопок.
     """
     user_telegram_id = message.from_user.id
 
@@ -126,26 +127,70 @@ async def view_bookings(message: Message):
         # Проверяем, что пользователь с ролью "user" существует
         user = session.query(User).filter(User.telegram_id == user_telegram_id, User.role == "user").first()
         if not user:
-            print(f"Пользователь с Telegram ID {user_telegram_id} не найден или не имеет роли 'user'.")
             await message.answer("У вас нет доступа к этому функционалу.")
             return
 
-        print(f"Пользователь найден: ID={user.id}, Telegram ID={user.telegram_id}")
-
         # Получаем бронирования пользователя
         bookings = session.query(LunchSlot).filter(LunchSlot.booked_by_user_id == user.telegram_id).all()
-        print(f"Найденные бронирования для пользователя {user.id}: {bookings}")
+        print(f"Найденные бронирования для пользователя {user.telegram_id}: {bookings}")
+
+        for booking in bookings:
+            print(f"Проверка бронирования ID={booking.id}: Менеджер={booking.manager}")
+            if booking.manager:
+                print(f"Менеджер: {booking.manager.full_name}")
+            else:
+                print(f"Ошибка: Поле 'manager' пустое для бронирования ID={booking.id}")
 
         if not bookings:
             await message.answer("У вас нет активных бронирований.")
             return
 
-        # Формируем список бронирований
-        response = "Ваши бронирования:\n"
-        for booking in bookings:
-            response += (
-                f"- Менеджер: {booking.manager.full_name}, "
-                f"Дата: {booking.date}, Время: {booking.start_time}\n"
-            )
+        # Генерируем клавиатуру с бронированиями
+        keyboard = generate_booking_keyboard(bookings)
+        await message.answer("Ваши бронирования:", reply_markup=keyboard)
 
-        await message.answer(response)
+
+@router.callback_query(F.data.startswith("detail_booking:"))
+async def booking_details(callback: CallbackQuery):
+    """
+    Отображение деталей бронирования.
+    """
+    booking_id = int(callback.data.split(":")[1])
+
+    with SessionLocal() as session:
+        booking = session.query(LunchSlot).filter(LunchSlot.id == booking_id).first()
+        if not booking:
+            await callback.message.answer("Бронирование не найдено.")
+            return
+
+        # Форматируем дату и время
+        formatted_date = booking.date.strftime("%A, %d %B")
+        formatted_time = booking.start_time.strftime("%H:%M")
+        response = (
+            f"Детали бронирования:\n"
+            f"- День недели: {formatted_date}\n"
+            f"- Время: {formatted_time}\n"
+            f"- Менеджер: {booking.manager.full_name}"
+        )
+        await callback.message.answer(response)
+
+
+@router.callback_query(F.data.startswith("delete_booking:"))
+async def delete_booking(callback: CallbackQuery):
+    """
+    Удаление бронирования.
+    """
+    booking_id = int(callback.data.split(":")[1])
+
+    with SessionLocal() as session:
+        booking = session.query(LunchSlot).filter(LunchSlot.id == booking_id).first()
+        if not booking:
+            await callback.message.answer("Бронирование не найдено.")
+            return
+
+        # Сбрасываем статус бронирования
+        booking.is_booked = False
+        booking.booked_by_user_id = None
+        session.commit()
+
+        await callback.message.answer("Бронирование успешно удалено.")

@@ -92,3 +92,22 @@ def get_all_lunch_slots():
     except Exception as e:
         print(f"Ошибка при получении слотов: {e}")
         raise
+
+def get_booking_details(booking_id: int):
+    with SessionLocal() as session:
+        return session.query(LunchSlot).filter(LunchSlot.id == booking_id).first()
+
+
+def delete_booking(booking_id: int):
+    try:
+        with SessionLocal() as session:
+            booking = session.query(LunchSlot).filter(LunchSlot.id == booking_id).first()
+            if not booking:
+                raise ValueError(f"Бронирование с ID {booking_id} не найдено.")
+            booking.is_booked = False
+            booking.booked_by_user_id = None
+            session.commit()
+            return True
+    except Exception as e:
+        print(f"Ошибка при удалении бронирования: {e}")
+        raise
