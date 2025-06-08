@@ -16,8 +16,12 @@ class User(Base):
     updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = Column(Boolean, default=True)
 
-    # Связь с LunchSlot
-    lunch_slots = relationship("LunchSlot", back_populates="manager")
+    # Связь с LunchSlot через manager_id
+    lunch_slots = relationship("LunchSlot", back_populates="manager", foreign_keys="LunchSlot.manager_id")
+
+    # Связь с LunchSlot через booked_by_user_id
+    booked_slots = relationship("LunchSlot", back_populates="booked_by_user", foreign_keys="LunchSlot.booked_by_user_id")
+
 
 class LunchSlot(Base):
     __tablename__ = "lunch_slots"
@@ -30,7 +34,11 @@ class LunchSlot(Base):
 
     # Привязка к менеджеру
     manager_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    manager = relationship("User", back_populates="lunch_slots")
+    manager = relationship("User", back_populates="lunch_slots", foreign_keys=[manager_id])
 
     # Поле для проверки, забронирован ли слот
     is_booked = Column(Boolean, default=False)
+
+    # Поле для хранения ID пользователя, который забронировал слот
+    booked_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    booked_by_user = relationship("User", back_populates="booked_slots", foreign_keys=[booked_by_user_id])

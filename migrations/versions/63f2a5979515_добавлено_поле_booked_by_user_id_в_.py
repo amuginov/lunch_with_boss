@@ -1,8 +1,8 @@
-"""Добавлено поле manager_id в LunchSlot
+"""Добавлено поле booked_by_user_id в LunchSlot
 
-Revision ID: e41549f66eb3
-Revises: 6db30a12fb2f
-Create Date: 2025-06-04 17:43:35.777754
+Revision ID: 63f2a5979515
+Revises: b730b1cae70c
+Create Date: 2025-06-06 14:32:53.865239
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'e41549f66eb3'
-down_revision: Union[str, None] = '6db30a12fb2f'
+revision: str = '63f2a5979515'
+down_revision: Union[str, None] = 'b730b1cae70c'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

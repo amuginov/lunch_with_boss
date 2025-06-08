@@ -50,8 +50,12 @@ def create_lunch_slot(date: date, start_time: time, manager_id: int):
             # Рассчитываем время окончания (длительность слота 1 час)
             end_time = (datetime.combine(date, start_time) + timedelta(hours=1)).time()
 
+            # Заменяем год на текущий
+            current_year = datetime.now().year
+            slot_date = date.replace(year=current_year)
+
             slot = LunchSlot(
-                date=date,
+                date=slot_date,
                 start_time=start_time,
                 end_time=end_time,
                 capacity=1,
