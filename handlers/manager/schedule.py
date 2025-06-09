@@ -21,6 +21,14 @@ async def start_lunch_slot_creation(message: Message, state: FSMContext):
     await message.answer("Выберите дату слота:", reply_markup=generate_date_keyboard())
     await state.set_state(LunchSlotCreationStates.waiting_for_date)
 
+@router.message(F.text == "📅 Новый слот")
+async def start_lunch_slot_creation(message: Message, state: FSMContext):
+    """
+    Обработка нажатия кнопки "📅 Новый слот".
+    """
+    await message.answer("Выберите дату слота:", reply_markup=generate_date_keyboard())
+    await state.set_state(LunchSlotCreationStates.waiting_for_date)
+
 @router.message(LunchSlotCreationStates.waiting_for_date)
 async def get_date(message: Message, state: FSMContext):
     try:

@@ -11,8 +11,8 @@ def manager_keyboard() -> ReplyKeyboardMarkup:
     """
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📅 Управление слотами обедов")],
-            [KeyboardButton(text="📋 Список пользователей")],
+            [KeyboardButton(text="📅 Новый слот"), KeyboardButton(text="📋 Мои слоты")],  # Первый ряд
+            [KeyboardButton(text="❓ Помощь")],  # Второй ряд
         ],
         resize_keyboard=True,
         input_field_placeholder="Выберите действие:"
