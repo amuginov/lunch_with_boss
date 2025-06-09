@@ -8,6 +8,7 @@ from db.models import LunchSlot, User  # Импортируем LunchSlot и Use
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from datetime import time  # Импортируем time
 from keyboards.employee import generate_booking_keyboard
+from utils.back_to_start_menu import return_to_main_menu
 
 router = Router()
 
@@ -77,42 +78,34 @@ async def book_slot(message: Message, state: FSMContext):
             # Получаем ID менеджера по имени
             manager = session.query(User).filter(User.full_name == slot_data["manager"]).first()
             if not manager:
-                print(f"Менеджер с именем {slot_data['manager']} не найден.")
                 await message.answer("Менеджер не найден.")
                 await state.clear()
                 return
 
-            # Выводим данные для отладки
-            print(f"Выбранный слот: {selected_slot}")
-            print(f"Дата: {selected_slot.split()[0]}, Время: {selected_slot.split()[1]}")
-            print(f"Типы данных: Дата={type(selected_slot.split()[0])}, Время={type(selected_slot.split()[1])}")
-
             # Преобразуем время в объект time
-            selected_time = time.fromisoformat(selected_slot.split()[1])  # Преобразуем строку в объект времени
+            selected_time = time.fromisoformat(selected_slot.split()[1])
 
             # Фильтруем слот по дате, времени и ID менеджера
             slot = session.query(LunchSlot).filter(
                 LunchSlot.date == selected_slot.split()[0],
-                LunchSlot.start_time == selected_time,  # Используем объект времени
+                LunchSlot.start_time == selected_time,
                 LunchSlot.manager_id == manager.id,
-                LunchSlot.is_booked == False  # Убедимся, что слот не забронирован
+                LunchSlot.is_booked == False
             ).first()
 
             if slot:
-                print(f"Слот найден: ID={slot.id}, дата={slot.date}, время={slot.start_time}")
                 # Обновляем слот
                 slot.is_booked = True
                 slot.booked_by_user_id = int(message.from_user.id)
                 session.commit()
-                print(f"Слот обновлён: ID={slot.id}, booked_by_user_id={slot.booked_by_user_id}")
                 await message.answer(f"Вы успешно забронировали обед с менеджером {slot_data['manager']} на {selected_slot}.")
             else:
-                print(f"Слот не найден или уже забронирован. Дата: {selected_slot.split()[0]}, Время: {selected_slot.split()[1]}, Менеджер ID: {manager.id}")
                 await message.answer("Слот не найден или уже забронирован.")
         except Exception as e:
-            print(f"Ошибка при бронировании: {e}")
             await message.answer("Произошла ошибка при бронировании. Попробуйте снова.")
         finally:
+            # Возвращаем в главное меню
+            await return_to_main_menu(message, "employee")
             await state.clear()
 
 

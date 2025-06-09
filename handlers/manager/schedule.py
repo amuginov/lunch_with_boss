@@ -8,6 +8,7 @@ from keyboards.manager import generate_date_keyboard, generate_time_keyboard, ma
 from keyboards.admin import admin_keyboard  # Импортируем admin_keyboard
 from keyboards.employee import employee_keyboard  # Импортируем employee_keyboard
 from datetime import datetime
+from utils.back_to_start_menu import return_to_main_menu
 
 router = Router()
 
@@ -60,13 +61,8 @@ async def get_time(message: Message, state: FSMContext):
         )
         await message.answer("Слот успешно добавлен!")
 
-        # Возвращаем начальную клавиатуру в зависимости от роли
-        if user.role == "manager":
-            await message.answer("Возвращаюсь в главное меню.", reply_markup=manager_keyboard())
-        elif user.role == "admin":
-            await message.answer("Возвращаюсь в главное меню.", reply_markup=admin_keyboard())
-        elif user.role == "employee":
-            await message.answer("Возвращаюсь в главное меню.", reply_markup=employee_keyboard())
+        # Используем функцию возврата в главное меню
+        await return_to_main_menu(message, user.role)
 
         await state.clear()
     except ValueError:

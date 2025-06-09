@@ -3,6 +3,7 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from db.crud import create_user, get_all_users, delete_user_by_telegram_id  # Импортируем delete_user_by_telegram_id
 from states.user_states import UserCreationStates, UserDeletionStates  # Импортируем новое состояние
+from utils.back_to_start_menu import return_to_main_menu
 
 router = Router()
 
@@ -63,6 +64,10 @@ async def get_role(message: Message, state: FSMContext):
         )
 
         await message.answer("Пользователь успешно добавлен!")
+
+        # Возвращаем в главное меню
+        await return_to_main_menu(message, "admin")
+
         await state.clear()
     except Exception as e:
         await message.answer(f"Произошла ошибка: {e}")
@@ -97,6 +102,10 @@ async def delete_user(message: Message, state: FSMContext):
         telegram_id = int(message.text)  # Проверяем, что введено число
         delete_user_by_telegram_id(telegram_id)
         await message.answer(f"Пользователь с Telegram ID {telegram_id} успешно удален.")
+
+        # Возвращаем в главное меню
+        await return_to_main_menu(message, "admin")
+
         await state.clear()
     except ValueError as e:
         await message.answer(str(e))

@@ -1,31 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
-# Словари для сокращения дней недели и месяцев
-WEEKDAY_SHORTCUTS = {
-    "понедельник": "пн",
-    "вторник": "вт",
-    "среда": "ср",
-    "четверг": "чт",
-    "пятница": "пт",
-    "суббота": "сб",
-    "воскресенье": "вс",
-}
-
-MONTH_SHORTCUTS = {
-    "01": "янв",
-    "02": "фев",
-    "03": "март",
-    "04": "апр",
-    "05": "май",
-    "06": "июн",
-    "07": "июл",
-    "08": "авг",
-    "09": "сен",
-    "10": "окт",
-    "11": "ноя",
-    "12": "дек",
-}
+from utils.common import WEEKDAY_SHORTCUTS, MONTH_SHORTCUTS
 
 def employee_keyboard() -> ReplyKeyboardMarkup:
     """
