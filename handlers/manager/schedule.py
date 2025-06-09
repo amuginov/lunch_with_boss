@@ -3,7 +3,7 @@ from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from states.user_states import LunchSlotCreationStates
-from db.crud import create_lunch_slot, get_user_by_telegram_id
+from db.crud import create_lunch_slot, get_user_by_telegram_id, get_all_lunch_slots
 from keyboards.manager import generate_date_keyboard, generate_time_keyboard, manager_keyboard  # Импортируем manager_keyboard
 from keyboards.admin import admin_keyboard  # Импортируем admin_keyboard
 from keyboards.employee import employee_keyboard  # Импортируем employee_keyboard
@@ -43,6 +43,14 @@ async def get_time(message: Message, state: FSMContext):
         if not user:
             await message.answer("Вы не авторизованы.")
             return
+
+        # Проверяем на дублирование слота
+        existing_slots = get_all_lunch_slots()
+        for slot in existing_slots:
+            if slot.date == slot_data["date"] and slot.start_time == start_time and slot.manager_id == user.id:
+                await message.answer("Выбранный слот Вы ранее уже открыли для записи. Попробуйте выбрать новый слот.")
+                await state.clear()
+                return
 
         # Создаем слот
         create_lunch_slot(
