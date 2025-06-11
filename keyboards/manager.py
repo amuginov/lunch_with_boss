@@ -59,6 +59,26 @@ def generate_time_keyboard() -> ReplyKeyboardMarkup:
         keyboard.append(row)
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
+def generate_time_inline_keyboard():
+    """
+    Генерация клавиатуры с часами (с 09:00 до 17:00) в виде Inline-кнопок (3 ряда, 3 строки).
+    """
+    keyboard = []  # Список для строк кнопок
+    row = []  # Текущая строка кнопок
+    for hour in range(9, 18):  # Часы с 09:00 до 17:00
+        button_text = f"{hour:02d}:00"
+        callback_data = f"select_time:{hour:02d}:00"  # Формируем callback_data
+        row.append(InlineKeyboardButton(text=button_text, callback_data=callback_data))
+        
+        if len(row) == 3:  # Если в строке 3 кнопки, добавляем её в клавиатуру
+            keyboard.append(row)
+            row = []  # Очищаем строку для следующей группы кнопок
+    
+    if row:  # Добавляем оставшиеся кнопки, если они есть
+        keyboard.append(row)
+    
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
 def generate_slots_keyboard(slots):
     """
     Генерация клавиатуры для списка слотов.

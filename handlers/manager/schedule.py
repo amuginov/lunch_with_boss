@@ -4,7 +4,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from states.user_states import LunchSlotCreationStates
 from db.crud import create_lunch_slot, get_user_by_telegram_id, get_all_lunch_slots
-from keyboards.manager import manager_keyboard, generate_slots_keyboard  # Импортируем manager_keyboard и generate_slots_keyboard
+from keyboards.manager import manager_keyboard, generate_slots_keyboard, generate_time_inline_keyboard  # Импортируем manager_keyboard, generate_slots_keyboard и generate_time_inline_keyboard
 from keyboards.admin import admin_keyboard  # Импортируем admin_keyboard
 from keyboards.employee import employee_keyboard  # Импортируем employee_keyboard
 from datetime import datetime, timedelta
@@ -37,19 +37,6 @@ def generate_date_inline_keyboard():
 
         added_days += 1
 
-    return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-
-def generate_time_inline_keyboard():
-    """
-    Генерация клавиатуры с часами (с 09:00 до 17:00) в виде Inline-кнопок.
-    """
-    keyboard = []  # Список для кнопок
-    for hour in range(9, 18):  # Часы с 09:00 до 17:00
-        button_text = f"{hour:02d}:00"
-        callback_data = f"select_time:{hour:02d}:00"  # Формируем callback_data
-        print(f"Добавление кнопки: {button_text}, callback_data: {callback_data}")  # Логирование
-        keyboard.append([InlineKeyboardButton(text=button_text, callback_data=callback_data)])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 

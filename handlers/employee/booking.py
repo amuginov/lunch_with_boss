@@ -171,7 +171,7 @@ async def booking_details(callback: CallbackQuery):
 @router.callback_query(F.data.startswith("delete_booking:"))
 async def delete_booking(callback: CallbackQuery):
     """
-    Удаление бронирования.
+    Удаление бронирования и освобождение слота.
     """
     booking_id = int(callback.data.split(":")[1])
 
@@ -186,4 +186,4 @@ async def delete_booking(callback: CallbackQuery):
         booking.booked_by_user_id = None
         session.commit()
 
-        await callback.message.answer("Бронирование успешно удалено.")
+        await callback.message.answer("Бронирование успешно удалено. Слот снова доступен для бронирования.")
