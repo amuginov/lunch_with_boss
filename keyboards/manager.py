@@ -1,6 +1,7 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import datetime, timedelta
 import locale
+from utils.common import WEEKDAY_SHORTCUTS, MONTH_SHORTCUTS
 
 # Устанавливаем локаль на русский
 locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
@@ -42,8 +43,6 @@ def generate_date_keyboard() -> ReplyKeyboardMarkup:
 
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-
 def generate_time_keyboard() -> ReplyKeyboardMarkup:
     """
     Генерация клавиатуры с часами (с 09:00 до 17:00) в 3 столбца.
@@ -59,3 +58,32 @@ def generate_time_keyboard() -> ReplyKeyboardMarkup:
     if row:  # Добавляем оставшиеся кнопки, если они есть
         keyboard.append(row)
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+
+def generate_slots_keyboard(slots):
+    """
+    Генерация клавиатуры для списка слотов.
+    :param slots: Список объектов LunchSlot.
+    :return: InlineKeyboardMarkup.
+    """
+    inline_keyboard = []
+    for slot in slots:
+        # Сокращаем день недели и месяц
+        weekday = WEEKDAY_SHORTCUTS[slot.date.strftime("%A")]
+        month = MONTH_SHORTCUTS[slot.date.strftime("%m")]
+        formatted_date = f"{weekday}, {slot.date.day} {month}"
+        formatted_time = slot.start_time.strftime("%H:%M")
+        button_text = f"{formatted_date}, {formatted_time}"
+
+        # Кнопка для деталей слота
+        detail_button = InlineKeyboardButton(
+            text=button_text,
+            callback_data=f"slot_detail:{slot.id}"
+        )
+        # Кнопка для удаления слота
+        delete_button = InlineKeyboardButton(
+            text="❌",  # Используем символ вместо текста для минимального размера
+            callback_data=f"delete_slot:{slot.id}"
+        )
+        inline_keyboard.append([detail_button, delete_button])
+
+    return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
