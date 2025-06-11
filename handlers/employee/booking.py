@@ -1,12 +1,12 @@
 from aiogram import Router, F
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, CallbackQuery
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from states.user_states import LunchBookingStates
 from db.crud import get_all_users, get_all_lunch_slots
 from db.database import SessionLocal  # Импортируем SessionLocal
 from db.models import LunchSlot, User  # Импортируем LunchSlot и User
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from datetime import time  # Импортируем time
+from datetime import time, datetime  # Импортируем time и datetime
 from keyboards.employee import generate_booking_keyboard
 from utils.back_to_start_menu import return_to_main_menu
 
@@ -24,88 +24,79 @@ async def start_booking(message: Message, state: FSMContext):
         await message.answer("Нет доступных менеджеров для бронирования.")
         return
 
-    # Генерируем кнопки с менеджерам
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=manager.full_name)] for manager in managers],
-        resize_keyboard=True
+    # Генерируем inline-клавиатуру с менеджерами
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=manager.full_name, callback_data=f"select_manager:{manager.id}")]
+            for manager in managers
+        ]
     )
 
     await message.answer("С кем Вы хотите забронировать обед?", reply_markup=keyboard)
     await state.set_state(LunchBookingStates.waiting_for_manager)
 
 
-@router.message(LunchBookingStates.waiting_for_manager)
-async def choose_manager(message: Message, state: FSMContext):
+@router.callback_query(F.data.startswith("select_manager:"))
+async def choose_manager(callback: CallbackQuery, state: FSMContext):
     """
     Обработка выбора менеджера.
     """
-    # Сохраняем выбранного менеджера
-    selected_manager = message.text
-    await state.update_data(manager=selected_manager)
+    # Извлекаем ID менеджера из callback_data
+    manager_id = int(callback.data.split(":")[1])
+    await state.update_data(manager_id=manager_id)
 
     # Получаем список свободных слотов для выбранного менеджера
     all_slots = get_all_lunch_slots()
+    today = datetime.now().date()
     available_slots = [
         slot for slot in all_slots
-        if slot.manager.full_name == selected_manager and not slot.is_booked
+        if slot.manager_id == manager_id and not slot.is_booked and slot.date >= today
     ]
 
     if not available_slots:
-        await message.answer("Нет доступных слотов для бронирования.")
+        await callback.message.answer("Нет доступных слотов для бронирования.")
         await state.clear()
         return
 
-    # Генерируем кнопки с доступными слотами
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=f"{slot.date} {slot.start_time}")] for slot in available_slots],
-        resize_keyboard=True
+    # Генерируем inline-клавиатуру с доступными слотами
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=f"{slot.date} {slot.start_time}", callback_data=f"select_slot:{slot.id}")]
+            for slot in available_slots
+        ]
     )
 
-    await message.answer("Выберите слот для бронирования:", reply_markup=keyboard)
+    await callback.message.answer("Выберите слот для бронирования:", reply_markup=keyboard)
     await state.set_state(LunchBookingStates.waiting_for_slot)
 
 
-@router.message(LunchBookingStates.waiting_for_slot)
-async def book_slot(message: Message, state: FSMContext):
+@router.callback_query(F.data.startswith("select_slot:"))
+async def book_slot(callback: CallbackQuery, state: FSMContext):
     """
     Обработка выбора слота.
     """
-    selected_slot = message.text
+    slot_id = int(callback.data.split(":")[1])
     slot_data = await state.get_data()
 
     with SessionLocal() as session:
         try:
-            # Получаем ID менеджера по имени
-            manager = session.query(User).filter(User.full_name == slot_data["manager"]).first()
-            if not manager:
-                await message.answer("Менеджер не найден.")
+            # Получаем слот по ID
+            slot = session.query(LunchSlot).filter(LunchSlot.id == slot_id, LunchSlot.is_booked == False).first()
+            if not slot:
+                await callback.message.answer("Слот не найден или уже забронирован.")
                 await state.clear()
                 return
 
-            # Преобразуем время в объект time
-            selected_time = time.fromisoformat(selected_slot.split()[1])
-
-            # Фильтруем слот по дате, времени и ID менеджера
-            slot = session.query(LunchSlot).filter(
-                LunchSlot.date == selected_slot.split()[0],
-                LunchSlot.start_time == selected_time,
-                LunchSlot.manager_id == manager.id,
-                LunchSlot.is_booked == False
-            ).first()
-
-            if slot:
-                # Обновляем слот
-                slot.is_booked = True
-                slot.booked_by_user_id = int(message.from_user.id)
-                session.commit()
-                await message.answer(f"Вы успешно забронировали обед с менеджером {slot_data['manager']} на {selected_slot}.")
-            else:
-                await message.answer("Слот не найден или уже забронирован.")
+            # Обновляем слот
+            slot.is_booked = True
+            slot.booked_by_user_id = int(callback.from_user.id)
+            session.commit()
+            await callback.message.answer(f"Вы успешно забронировали обед с менеджером на {slot.date} {slot.start_time}.")
         except Exception as e:
-            await message.answer("Произошла ошибка при бронировании. Попробуйте снова.")
+            await callback.message.answer("Произошла ошибка при бронировании. Попробуйте снова.")
         finally:
             # Возвращаем в главное меню
-            await return_to_main_menu(message, "employee")
+            await return_to_main_menu(callback.message, "employee")
             await state.clear()
 
 
