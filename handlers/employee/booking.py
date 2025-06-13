@@ -7,42 +7,11 @@ from db.database import SessionLocal  # Импортируем SessionLocal
 from db.models import LunchSlot, User  # Импортируем LunchSlot и User
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from datetime import time, datetime  # Импортируем time и datetime
-from keyboards.employee import generate_booking_keyboard
+from keyboards.employee import generate_booking_keyboard, generate_slots_keyboard
 from utils.back_to_start_menu import return_to_main_menu
 from utils.common import WEEKDAY_SHORTCUTS, MONTH_SHORTCUTS
 
 router = Router()
-
-def generate_slots_keyboard(slots):
-    """
-    Генерация inline-клавиатуры для списка слотов в 2 ряда.
-    :param slots: Список объектов LunchSlot.
-    :return: InlineKeyboardMarkup.
-    """
-    inline_keyboard = []
-    row = []
-    for slot in slots:
-        # Форматируем дату и время
-        weekday = WEEKDAY_SHORTCUTS[slot.date.strftime("%A").lower()]
-        month = MONTH_SHORTCUTS[slot.date.strftime("%m")]
-        formatted_date = f"{weekday}, {slot.date.day} {month}"
-        formatted_time = slot.start_time.strftime("%H:%M")
-        button_text = f"{formatted_date}, {formatted_time}"
-
-        # Добавляем кнопку в строку
-        row.append(InlineKeyboardButton(text=button_text, callback_data=f"select_slot:{slot.id}"))
-
-        # Если в строке 2 кнопки, добавляем её в клавиатуру
-        if len(row) == 2:
-            inline_keyboard.append(row)
-            row = []
-
-    # Добавляем оставшиеся кнопки, если они есть
-    if row:
-        inline_keyboard.append(row)
-
-    return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
-
 
 @router.message(F.text == "🍽 Забронировать обед")
 async def start_booking(message: Message, state: FSMContext):

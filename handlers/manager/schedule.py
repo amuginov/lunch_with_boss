@@ -4,7 +4,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from states.user_states import LunchSlotCreationStates
 from db.crud import create_lunch_slot, get_user_by_telegram_id, get_all_lunch_slots
-from keyboards.manager import manager_keyboard, generate_slots_keyboard, generate_time_inline_keyboard  # Импортируем manager_keyboard, generate_slots_keyboard и generate_time_inline_keyboard
+from keyboards.manager import manager_keyboard, generate_date_inline_keyboard, generate_time_inline_keyboard, generate_slots_keyboard  # Импортируем manager_keyboard, generate_date_inline_keyboard, generate_time_inline_keyboard и generate_slots_keyboard
 from keyboards.admin import admin_keyboard  # Импортируем admin_keyboard
 from keyboards.employee import employee_keyboard  # Импортируем employee_keyboard
 from datetime import datetime, timedelta
@@ -13,32 +13,6 @@ from db.models import LunchSlot
 from db.database import SessionLocal
 
 router = Router()
-
-def generate_date_inline_keyboard():
-    """
-    Генерация клавиатуры с ближайшими 5 рабочими днями в виде Inline-кнопок.
-    """
-    keyboard = []  # Список для кнопок
-    today = datetime.now()
-    added_days = 0  # Счетчик добавленных рабочих дней
-
-    while added_days < 5:  # Добавляем только 5 рабочих дней
-        day = today + timedelta(days=added_days)
-        weekday = day.weekday()  # 0 = Понедельник, 6 = Воскресенье
-
-        if weekday < 5:  # Если день не суббота (5) и не воскресенье (6)
-            button_text = day.strftime("%A, %d %B")  # Пример: "Понедельник, 05 июня"
-            callback_data = f"select_date:{day.strftime('%Y-%m-%d')}"  # Формируем callback_data в формате "%Y-%m-%d"
-            keyboard.append([InlineKeyboardButton(text=button_text.capitalize(), callback_data=callback_data)])
-        else:
-            # Если день суббота или воскресенье, пропускаем его
-            today += timedelta(days=1)
-            continue
-
-        added_days += 1
-
-    return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
 
 @router.message(Command(commands=["schedule"]))
 async def schedule_command(message: Message):
