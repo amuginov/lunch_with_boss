@@ -1,10 +1,10 @@
 from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
-from db.crud import create_user, get_all_users, delete_user_by_telegram_id  # Импортируем delete_user_by_telegram_id
-from states.user_states import UserCreationStates, UserDeletionStates  # Импортируем новое состояние
-from keyboards.admin import admin_keyboard  # Импортируем клавиатуру для администратора
-from utils.common import return_to_main_menu  # Заменяем импорт
+from states.user_states import UserCreationStates, UserDeletionStates
+from keyboards.admin import admin_keyboard
+from utils.common import return_to_main_menu
+from services.user_service import add_user, list_all_users, remove_user  # Импортируем сервисные функции
 
 router = Router()
 
@@ -16,7 +16,7 @@ async def start_user_creation(message: Message, state: FSMContext):
 @router.message(UserCreationStates.waiting_for_telegram_id)
 async def get_telegram_id(message: Message, state: FSMContext):
     try:
-        telegram_id = int(message.text)  # Проверяем, что введено число
+        telegram_id = int(message.text)
         await state.update_data(telegram_id=telegram_id)
         await message.answer("Введите полное имя пользователя:")
         await state.set_state(UserCreationStates.waiting_for_full_name)
@@ -49,26 +49,18 @@ async def get_role(message: Message, state: FSMContext):
             await message.answer("Пожалуйста, выберите роль из предложенных вариантов: admin, user, manager.")
             return
 
-        # Получаем данные из состояния
         user_data = await state.get_data()
 
-        # Логируем данные для проверки
-        print(f"Создание пользователя с данными: Telegram ID={user_data['telegram_id']}, "
-              f"Full Name={user_data['full_name']}, Phone={user_data['phone_number']}, Role={role}")
-
-        # Создаем пользователя
-        create_user(
-            telegram_id=user_data["telegram_id"],  # Используем telegram_id из состояния
+        # Используем сервис для добавления пользователя
+        await add_user(
+            telegram_id=user_data["telegram_id"],
             full_name=user_data["full_name"],
             phone_number=user_data["phone_number"],
             role=role
         )
 
         await message.answer("Пользователь успешно добавлен!")
-
-        # Возвращаем в главное меню
         await return_to_main_menu(message, "admin", admin_keyboard())
-
         await state.clear()
     except Exception as e:
         await message.answer(f"Произошла ошибка: {e}")
@@ -77,14 +69,13 @@ async def get_role(message: Message, state: FSMContext):
 @router.message(F.text == "Список пользователей")
 async def list_users(message: Message):
     try:
-        # Получаем список всех пользователей
-        users = get_all_users()
+        # Используем сервис для получения списка пользователей
+        users = await list_all_users()
 
         if not users:
             await message.answer("Список пользователей пуст.")
             return
 
-        # Формируем сообщение со списком пользователей
         user_list = "\n".join(
             [f"ID: {user.telegram_id}, ФИО: {user.full_name}, Телефон: {user.phone_number or 'Не указан'}, Роль: {user.role}" for user in users]
         )
@@ -100,13 +91,13 @@ async def start_user_deletion(message: Message, state: FSMContext):
 @router.message(UserDeletionStates.waiting_for_telegram_id)
 async def delete_user(message: Message, state: FSMContext):
     try:
-        telegram_id = int(message.text)  # Проверяем, что введено число
-        delete_user_by_telegram_id(telegram_id)
-        await message.answer(f"Пользователь с Telegram ID {telegram_id} успешно удален.")
+        telegram_id = int(message.text)
 
-        # Возвращаем в главное меню
+        # Используем сервис для удаления пользователя
+        await remove_user(telegram_id)
+
+        await message.answer(f"Пользователь с Telegram ID {telegram_id} успешно удален!")
         await return_to_main_menu(message, "admin", admin_keyboard())
-
         await state.clear()
     except ValueError as e:
         await message.answer(str(e))
