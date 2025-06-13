@@ -43,15 +43,22 @@ def delete_user_by_telegram_id(telegram_id: int):
 def create_lunch_slot(date: date, start_time: time, manager_id: int):
     try:
         with SessionLocal() as session:
+            # Проверяем, существует ли уже слот с такой же датой, временем и менеджером
+            existing_slot = session.query(LunchSlot).filter(
+                LunchSlot.date == date,
+                LunchSlot.start_time == start_time,
+                LunchSlot.manager_id == manager_id
+            ).first()
+
+            if existing_slot:
+                raise ValueError("Слот с указанной датой и временем уже существует.")
+
             # Рассчитываем время окончания (длительность слота 1 час)
             end_time = (datetime.combine(date, start_time) + timedelta(hours=1)).time()
 
-            # Заменяем год на текущий
-            current_year = datetime.now().year
-            slot_date = date.replace(year=current_year)
-
+            # Создаём новый слот
             slot = LunchSlot(
-                date=slot_date,
+                date=date,
                 start_time=start_time,
                 end_time=end_time,
                 capacity=1,

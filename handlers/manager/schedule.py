@@ -3,14 +3,16 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from states.user_states import LunchSlotCreationStates
-from db.crud import create_lunch_slot, get_user_by_telegram_id, get_all_lunch_slots
-from keyboards.manager import manager_keyboard, generate_date_inline_keyboard, generate_time_inline_keyboard, generate_slots_keyboard  # Импортируем manager_keyboard, generate_date_inline_keyboard, generate_time_inline_keyboard и generate_slots_keyboard
-from keyboards.admin import admin_keyboard  # Импортируем admin_keyboard
-from keyboards.employee import employee_keyboard  # Импортируем employee_keyboard
-from datetime import datetime, timedelta
+from keyboards.manager import manager_keyboard, generate_date_inline_keyboard, generate_time_inline_keyboard, generate_slots_keyboard
 from utils.common import return_to_main_menu
-from db.models import LunchSlot
-from db.database import SessionLocal
+from services.schedule_service import (
+    get_manager_slots,
+    add_lunch_slot,
+    get_slot_details,
+    remove_lunch_slot,
+)
+from datetime import datetime
+from db.crud import get_user_by_telegram_id  # Импортируем функцию
 
 router = Router()
 
@@ -25,64 +27,39 @@ async def start_lunch_slot_creation(message: Message, state: FSMContext):
 
 @router.message(F.text == "📅 Новый слот")
 async def start_lunch_slot_creation(message: Message, state: FSMContext):
-    """
-    Обработка нажатия кнопки "📅 Новый слот".
-    """
     await message.answer("Выберите дату слота:", reply_markup=generate_date_inline_keyboard())
     await state.set_state(LunchSlotCreationStates.waiting_for_date)
 
 @router.message(F.text == "📋 Мои слоты")
 async def view_slots(message: Message):
-    """
-    Отображение всех слотов менеджера в виде таблицы кнопок.
-    """
-    user = get_user_by_telegram_id(message.from_user.id)
+    user = get_user_by_telegram_id(message.from_user.id)  # Убрали await
     if not user or user.role != "manager":
         await message.answer("У вас нет доступа к этому функционалу.")
         return
 
-    # Получаем все слоты менеджера, начиная с сегодняшнего дня
-    all_slots = get_all_lunch_slots()
-    today = datetime.now().date()
-    manager_slots = [
-        slot for slot in all_slots
-        if slot.manager_id == user.id and slot.date >= today
-    ]
+    manager_slots = await get_manager_slots(user.id)
 
     if not manager_slots:
         await message.answer("У вас нет активных слотов.")
         return
 
-    # Генерируем клавиатуру со слотами
     keyboard = generate_slots_keyboard(manager_slots)
     await message.answer("Ваши слоты:", reply_markup=keyboard)
 
 
 @router.callback_query(F.data.startswith("select_date:"))
 async def get_date(callback: CallbackQuery, state: FSMContext):
-    """
-    Обработка выбора даты через Inline-кнопки.
-    """
     try:
-        # Логируем данные для диагностики
-        print(f"Получено callback_data: {callback.data}")
-
-        # Извлекаем дату из callback_data
         slot_date = datetime.strptime(callback.data.split(":")[1], "%Y-%m-%d").date()
-        print(f"Преобразованная дата: {slot_date}")
-
         await state.update_data(date=slot_date)
         await callback.message.answer("Выберите время начала слота:", reply_markup=generate_time_inline_keyboard())
         await state.set_state(LunchSlotCreationStates.waiting_for_time)
     except ValueError as e:
-        print(f"Ошибка преобразования даты: {e}")
         await callback.message.answer("Неверный формат даты. Попробуйте снова, выбрав дату из кнопок.")
+
 
 @router.callback_query(F.data.startswith("select_time:"))
 async def get_time(callback: CallbackQuery, state: FSMContext):
-    """
-    Обработка выбора времени через Inline-кнопки.
-    """
     try:
         time_data = ":".join(callback.data.split(":")[1:])
         start_time = datetime.strptime(time_data, "%H:%M").time()
@@ -92,17 +69,22 @@ async def get_time(callback: CallbackQuery, state: FSMContext):
             await callback.message.answer("Ошибка: дата не была выбрана. Попробуйте снова.")
             return
 
-        user = get_user_by_telegram_id(callback.from_user.id)
+        user = get_user_by_telegram_id(callback.from_user.id)  # Убрали await
         if not user:
             await callback.message.answer("Вы не авторизованы.")
             return
 
-        create_lunch_slot(
-            date=slot_data["date"],
-            start_time=start_time,
-            manager_id=user.id
-        )
-        await callback.message.answer("Слот успешно добавлен!")
+        # Пытаемся создать слот
+        try:
+            await add_lunch_slot(
+                date=slot_data["date"],
+                start_time=start_time,
+                manager_id=user.id
+            )
+            await callback.message.answer("Слот успешно добавлен!")
+        except ValueError as e:
+            await callback.message.answer(f"Ошибка: {e}")
+
         await return_to_main_menu(callback.message, "manager", manager_keyboard())
         await state.clear()
     except Exception as e:
@@ -111,18 +93,11 @@ async def get_time(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data.startswith("slot_detail:"))
 async def slot_details(callback: CallbackQuery):
-    """
-    Отображение деталей слота.
-    """
     slot_id = int(callback.data.split(":")[1])
 
-    with SessionLocal() as session:
-        slot = session.query(LunchSlot).filter(LunchSlot.id == slot_id).first()
-        if not slot:
-            await callback.message.answer("Слот не найден.")
-            return
+    try:
+        slot = await get_slot_details(slot_id)
 
-        # Форматируем дату и время
         formatted_date = slot.date.strftime("%A, %d %B")
         formatted_time = slot.start_time.strftime("%H:%M")
         response = (
@@ -132,22 +107,18 @@ async def slot_details(callback: CallbackQuery):
             f"- Менеджер: {slot.manager.full_name}"
         )
         await callback.message.answer(response)
+    except ValueError as e:
+        await callback.message.answer(str(e))
+    except Exception as e:
+        await callback.message.answer(f"Произошла ошибка при получении деталей слота: {e}")
 
 
 @router.callback_query(F.data.startswith("delete_slot:"))
 async def delete_slot(callback: CallbackQuery):
-    """
-    Удаление слота.
-    """
     slot_id = int(callback.data.split(":")[1])
 
-    with SessionLocal() as session:
-        slot = session.query(LunchSlot).filter(LunchSlot.id == slot_id).first()
-        if not slot:
-            await callback.message.answer("Слот не найден.")
-            return
-
-        session.delete(slot)
-        session.commit()
-
+    try:
+        await remove_lunch_slot(slot_id)
         await callback.message.answer("Слот успешно удалён.")
+    except Exception as e:
+        await callback.message.answer(f"Произошла ошибка при удалении слота: {e}")
