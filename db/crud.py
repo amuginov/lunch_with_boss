@@ -3,10 +3,6 @@ from .database import SessionLocal
 from .models import User, LunchSlot
 from sqlalchemy.orm import joinedload
 
-def get_user(user_id: int):
-    with SessionLocal() as session:
-        return session.query(User).filter(User.id == user_id).first()
-
 def get_user_by_telegram_id(telegram_id: int):
     with SessionLocal() as session:
         return session.query(User).filter(User.telegram_id == telegram_id).first()
@@ -92,11 +88,6 @@ def get_all_lunch_slots():
     except Exception as e:
         print(f"Ошибка при получении слотов: {e}")
         raise
-
-def get_booking_details(booking_id: int):
-    with SessionLocal() as session:
-        return session.query(LunchSlot).filter(LunchSlot.id == booking_id).first()
-
 
 def delete_booking(booking_id: int):
     try:
