@@ -3,7 +3,8 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from db.crud import create_user, get_all_users, delete_user_by_telegram_id  # Импортируем delete_user_by_telegram_id
 from states.user_states import UserCreationStates, UserDeletionStates  # Импортируем новое состояние
-from utils.back_to_start_menu import return_to_main_menu
+from keyboards.admin import admin_keyboard  # Импортируем клавиатуру для администратора
+from utils.common import return_to_main_menu  # Заменяем импорт
 
 router = Router()
 
@@ -66,7 +67,7 @@ async def get_role(message: Message, state: FSMContext):
         await message.answer("Пользователь успешно добавлен!")
 
         # Возвращаем в главное меню
-        await return_to_main_menu(message, "admin")
+        await return_to_main_menu(message, "admin", admin_keyboard())
 
         await state.clear()
     except Exception as e:
@@ -104,7 +105,7 @@ async def delete_user(message: Message, state: FSMContext):
         await message.answer(f"Пользователь с Telegram ID {telegram_id} успешно удален.")
 
         # Возвращаем в главное меню
-        await return_to_main_menu(message, "admin")
+        await return_to_main_menu(message, "admin", admin_keyboard())
 
         await state.clear()
     except ValueError as e:

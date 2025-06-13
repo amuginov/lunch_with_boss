@@ -8,7 +8,7 @@ from keyboards.manager import manager_keyboard, generate_date_inline_keyboard, g
 from keyboards.admin import admin_keyboard  # Импортируем admin_keyboard
 from keyboards.employee import employee_keyboard  # Импортируем employee_keyboard
 from datetime import datetime, timedelta
-from utils.back_to_start_menu import return_to_main_menu
+from utils.common import return_to_main_menu
 from db.models import LunchSlot
 from db.database import SessionLocal
 
@@ -84,55 +84,28 @@ async def get_time(callback: CallbackQuery, state: FSMContext):
     Обработка выбора времени через Inline-кнопки.
     """
     try:
-        # Логируем данные для диагностики
-        print(f"Получено callback_data: {callback.data}")
-
-        # Извлекаем время из callback_data
-        time_data = ":".join(callback.data.split(":")[1:])  # Корректное извлечение времени
-        print(f"Извлечённое время: {time_data}")
-
+        time_data = ":".join(callback.data.split(":")[1:])
         start_time = datetime.strptime(time_data, "%H:%M").time()
-        print(f"Преобразованное время: {start_time}")
 
         slot_data = await state.get_data()
-        print(f"Данные состояния: {slot_data}")
-
-        # Проверяем наличие ключа "date" в состоянии
         if "date" not in slot_data:
             await callback.message.answer("Ошибка: дата не была выбрана. Попробуйте снова.")
             return
 
-        # Получаем пользователя из базы данных
         user = get_user_by_telegram_id(callback.from_user.id)
         if not user:
             await callback.message.answer("Вы не авторизованы.")
             return
 
-        # Проверяем на дублирование слота
-        existing_slots = get_all_lunch_slots()
-        for slot in existing_slots:
-            if slot.date == slot_data["date"] and slot.start_time == start_time and slot.manager_id == user.id:
-                await callback.message.answer("Выбранный слот Вы ранее уже открыли для записи. Попробуйте выбрать новый слот.")
-                await state.clear()
-                return
-
-        # Создаем слот
         create_lunch_slot(
             date=slot_data["date"],
             start_time=start_time,
-            manager_id=user.id  # Привязка к менеджеру
+            manager_id=user.id
         )
         await callback.message.answer("Слот успешно добавлен!")
-
-        # Используем функцию возврата в главное меню
-        await return_to_main_menu(callback.message, user.role)
-
+        await return_to_main_menu(callback.message, "manager", manager_keyboard())
         await state.clear()
-    except ValueError as e:
-        print(f"Ошибка преобразования времени: {e}")
-        await callback.message.answer("Неверный формат времени. Попробуйте снова, выбрав время из кнопок.")
     except Exception as e:
-        print(f"Произошла ошибка: {e}")
         await callback.message.answer(f"Произошла ошибка: {e}")
 
 

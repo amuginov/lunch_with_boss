@@ -7,9 +7,8 @@ from db.database import SessionLocal  # Импортируем SessionLocal
 from db.models import LunchSlot, User  # Импортируем LunchSlot и User
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from datetime import time, datetime  # Импортируем time и datetime
-from keyboards.employee import generate_booking_keyboard, generate_slots_keyboard
-from utils.back_to_start_menu import return_to_main_menu
-from utils.common import WEEKDAY_SHORTCUTS, MONTH_SHORTCUTS
+from keyboards.employee import generate_booking_keyboard, generate_slots_keyboard, employee_keyboard
+from utils.common import WEEKDAY_SHORTCUTS, MONTH_SHORTCUTS, return_to_main_menu
 
 router = Router()
 
@@ -72,27 +71,23 @@ async def book_slot(callback: CallbackQuery, state: FSMContext):
     Обработка выбора слота.
     """
     slot_id = int(callback.data.split(":")[1])
-    slot_data = await state.get_data()
 
     with SessionLocal() as session:
         try:
-            # Получаем слот по ID
             slot = session.query(LunchSlot).filter(LunchSlot.id == slot_id, LunchSlot.is_booked == False).first()
             if not slot:
                 await callback.message.answer("Слот не найден или уже забронирован.")
                 await state.clear()
                 return
 
-            # Обновляем слот
             slot.is_booked = True
             slot.booked_by_user_id = int(callback.from_user.id)
             session.commit()
             await callback.message.answer(f"Вы успешно забронировали обед с менеджером на {slot.date} {slot.start_time}.")
-        except Exception as e:
+        except Exception:
             await callback.message.answer("Произошла ошибка при бронировании. Попробуйте снова.")
         finally:
-            # Возвращаем в главное меню
-            await return_to_main_menu(callback.message, "employee")
+            await return_to_main_menu(callback.message, "employee", employee_keyboard())
             await state.clear()
 
 
