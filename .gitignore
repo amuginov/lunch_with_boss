@@ -3,4 +3,4 @@ users.db
 myenv/
 lunch_bot.db
 init_admin_muginov.py
-read_files.py
+client_secret_*.json
