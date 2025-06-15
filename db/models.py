@@ -8,20 +8,17 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    telegram_id = Column(BigInteger, unique=True, nullable=False)
-    full_name = Column(String(255), nullable=False)
-    phone_number = Column(String(15), nullable=True)
-    role = Column(String(50), default="unauth_user")  # admin, user, manager, unauth_user
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
-    is_active = Column(Boolean, default=True)
+    telegram_id = Column(Integer, unique=True, nullable=False)
+    full_name = Column(String, nullable=False)
+    phone_number = Column(String, nullable=False)
+    role = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=True)  # Уникальное ограничение
 
     # Связь с LunchSlot через manager_id
-    lunch_slots = relationship("LunchSlot", back_populates="manager", foreign_keys="LunchSlot.manager_id")
+    lunch_slots = relationship("LunchSlot", back_populates="manager", foreign_keys="[LunchSlot.manager_id]")
 
     # Связь с LunchSlot через booked_by_user_id
-    booked_slots = relationship("LunchSlot", back_populates="booked_by_user", foreign_keys="LunchSlot.booked_by_user_id")
-
+    booked_slots = relationship("LunchSlot", back_populates="booked_by_user", foreign_keys="[LunchSlot.booked_by_user_id]")
 
 class LunchSlot(Base):
     __tablename__ = "lunch_slots"

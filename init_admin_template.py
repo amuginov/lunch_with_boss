@@ -1,6 +1,5 @@
 from db.database import SessionLocal
 from db.models import User
-from datetime import datetime
 
 def create_admin():
     with SessionLocal() as session:
@@ -9,9 +8,7 @@ def create_admin():
             full_name="Ваше ФИО",  # Укажите ваше имя
             phone_number="+1234567890",  # Укажите ваш номер телефона
             role="admin",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            is_active=True
+            email="admin@example.com"  # Укажите email администратора
         )
         session.add(admin)
         session.commit()

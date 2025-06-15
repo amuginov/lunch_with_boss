@@ -68,9 +68,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            literal_binds=True,
-            dialect_opts={"paramstyle": "named"},
-            render_as_batch=True  # Включаем batch mode
+            render_as_batch=True  # Если вы используете batch mode
         )
 
         with context.begin_transaction():
