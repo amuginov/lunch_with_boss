@@ -8,11 +8,13 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    telegram_id = Column(Integer, unique=True, nullable=False)
-    full_name = Column(String, nullable=False)
+    telegram_id = Column(Integer, unique=True, nullable=False)  # Telegram ID
+    last_name = Column(String, nullable=False)  # Фамилия
+    first_name = Column(String, nullable=False)  # Имя
+    middle_name = Column(String, nullable=True)  # Отчество
     phone_number = Column(String, nullable=False)
     role = Column(String, nullable=False)
-    email = Column(String, unique=True, nullable=True)  # Уникальное ограничение
+    email = Column(String, unique=True, nullable=True)  # Email
 
     # Связь с LunchSlot через manager_id
     lunch_slots = relationship("LunchSlot", back_populates="manager", foreign_keys="[LunchSlot.manager_id]")

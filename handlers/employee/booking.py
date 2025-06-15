@@ -25,7 +25,12 @@ async def start_booking(message: Message, state: FSMContext):
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=manager.full_name, callback_data=f"select_manager:{manager.id}")]
+            [
+                InlineKeyboardButton(
+                    text=f"{manager.last_name} {manager.first_name} {manager.middle_name or ''}".strip(),
+                    callback_data=f"select_manager:{manager.id}"
+                )
+            ]
             for manager in managers
         ]
     )

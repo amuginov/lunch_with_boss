@@ -1,3 +1,4 @@
+# filepath: init_db.py
 from db.database import engine
 from db.models import Base
 

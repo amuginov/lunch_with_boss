@@ -1,14 +1,17 @@
 from db.crud import create_user, get_all_users, delete_user_by_telegram_id
 
-async def add_user(telegram_id: int, full_name: str, phone_number: str, role: str):
+async def add_user(telegram_id: int, last_name: str, first_name: str, middle_name: str, phone_number: str, email: str, role: str):
     """
     Создает нового пользователя.
     """
     try:
         user = create_user(
             telegram_id=telegram_id,
-            full_name=full_name,
+            last_name=last_name,
+            first_name=first_name,
+            middle_name=middle_name,
             phone_number=phone_number,
+            email=email,
             role=role
         )
         return user

@@ -47,11 +47,17 @@ async def book_slot(slot_id: int, user_id: int):
             slot.booked_by_user_id = user_id
             session.commit()
 
+            # Формируем имя менеджера
+            manager_name = (
+                f"{slot.manager.last_name} {slot.manager.first_name} {slot.manager.middle_name or ''}".strip()
+                if slot.manager else "Неизвестный менеджер"
+            )
+
             # Возвращаем только необходимые данные
             return {
                 "date": slot.date,
                 "start_time": slot.start_time,
-                "manager_name": slot.manager.full_name if slot.manager else "Неизвестный менеджер"
+                "manager_name": manager_name
             }
         except Exception as e:
             raise Exception(f"Ошибка при бронировании слота: {e}")
@@ -75,7 +81,10 @@ async def get_user_bookings(user_telegram_id: int):
                     "id": booking.id,
                     "date": booking.date,
                     "start_time": booking.start_time,
-                    "manager_name": booking.manager.full_name if booking.manager else "Неизвестный менеджер",
+                    "manager_name": (
+                        f"{booking.manager.last_name} {booking.manager.first_name} {booking.manager.middle_name or ''}".strip()
+                        if booking.manager else "Неизвестный менеджер"
+                    ),
                 }
                 for booking in bookings
             ]
@@ -112,13 +121,19 @@ async def get_booking_details(booking_id: int):
             if not booking:
                 raise ValueError("Бронирование не найдено.")
 
+            # Формируем имя менеджера
+            manager_name = (
+                f"{booking.manager.last_name} {booking.manager.first_name} {booking.manager.middle_name or ''}".strip()
+                if booking.manager else "Неизвестный менеджер"
+            )
+
             # Извлекаем данные о бронировании
             booking_details = {
                 "id": booking.id,
                 "date": booking.date,
                 "start_time": booking.start_time,
                 "end_time": booking.end_time,
-                "manager_name": booking.manager.full_name if booking.manager else "Неизвестный менеджер",
+                "manager_name": manager_name,
             }
             return booking_details
         except Exception as e:
