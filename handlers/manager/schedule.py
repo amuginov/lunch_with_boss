@@ -69,7 +69,7 @@ async def get_time(callback: CallbackQuery, state: FSMContext):
             await callback.message.answer("Ошибка: дата не была выбрана. Попробуйте снова.")
             return
 
-        user = get_user_by_telegram_id(callback.from_user.id)  # Убрали await
+        user = get_user_by_telegram_id(callback.from_user.id)
         if not user:
             await callback.message.answer("Вы не авторизованы.")
             return
@@ -81,7 +81,7 @@ async def get_time(callback: CallbackQuery, state: FSMContext):
                 start_time=start_time,
                 manager_id=user.id
             )
-            await callback.message.answer("Слот успешно добавлен!")
+            await callback.message.answer("Слот успешно добавлен! Событие добавлено в Google Calendar.")
         except ValueError as e:
             await callback.message.answer(f"Ошибка: {e}")
 
@@ -119,6 +119,6 @@ async def delete_slot(callback: CallbackQuery):
 
     try:
         await remove_lunch_slot(slot_id)
-        await callback.message.answer("Слот успешно удалён.")
+        await callback.message.answer("Слот успешно удалён. Событие удалено из Google Calendar.")
     except Exception as e:
         await callback.message.answer(f"Произошла ошибка при удалении слота: {e}")

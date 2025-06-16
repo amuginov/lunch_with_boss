@@ -5,3 +5,4 @@ lunch_bot.db
 init_admin_muginov.py
 client_secret_*.json
 read_files.pyclient_secret_*.json
+credentials.json
