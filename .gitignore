@@ -7,5 +7,4 @@ client_secret_*.json
 read_files.pyclient_secret_*.json
 credentials.json
 token.json
-__pycache__/*.pyc
-migrations/__pycache__/
+**/__pycache__/

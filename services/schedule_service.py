@@ -1,3 +1,4 @@
+from sqlalchemy import Column, Integer, ForeignKey
 from services.google_calendar_service import create_event, delete_event
 from db.crud import create_lunch_slot, get_user_by_telegram_id, get_all_lunch_slots, delete_lunch_slot
 from datetime import datetime, timedelta
@@ -24,13 +25,20 @@ async def add_lunch_slot(date: datetime.date, start_time: datetime.time, manager
     Создаёт новый слот для обеда и добавляет событие в Google Calendar.
     """
     try:
+        # Проверяем пользователя
+        user = get_user_by_telegram_id(manager_id)
+        if not user:
+            raise ValueError("Пользователь не найден. Убедитесь, что вы зарегистрированы.")
+
         # Создаём слот в базе данных
         slot = create_lunch_slot(date=date, start_time=start_time, manager_id=manager_id)
 
         # Получаем данные менеджера
         manager = get_user_by_telegram_id(manager_id)
-        if not manager or not manager.email:
-            raise ValueError("У менеджера отсутствует email для интеграции с Google Calendar.")
+        if not manager:
+            raise ValueError(f"Пользователь с Telegram ID {manager_id} не найден.")
+        if not manager.email:
+            raise ValueError(f"У менеджера {manager.last_name} {manager.first_name} отсутствует email для интеграции с Google Calendar.")
 
         # Формируем данные для события
         summary = "Обед с сотрудниками"
@@ -86,3 +94,26 @@ async def remove_lunch_slot(slot_id: int):
         return True
     except Exception as e:
         raise Exception(f"Ошибка при удалении слота: {e}")
+
+
+def delete_user_by_telegram_id(telegram_id: int):
+    try:
+        with SessionLocal() as session:
+            # Получаем пользователя
+            user = session.query(User).filter(User.telegram_id == telegram_id).first()
+            if not user:
+                raise ValueError(f"Пользователь с Telegram ID {telegram_id} не найден.")
+
+            # Удаляем связанные слоты
+            session.query(LunchSlot).filter(LunchSlot.manager_id == user.id).delete()
+
+            # Удаляем пользователя
+            session.delete(user)
+            session.commit()
+            return True
+    except Exception as e:
+        print(f"Ошибка при удалении пользователя: {e}")
+        raise
+
+
+manager_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
