@@ -43,4 +43,4 @@ class LunchSlot(Base):
     booked_by_user = relationship("User", back_populates="booked_slots", foreign_keys=[booked_by_user_id])
 
     # Новое поле для хранения ID события Google Calendar
-    event_id = Column(String, nullable=True)    alias python3="/opt/homebrew/opt/python@3.9/bin/python3.9"
+    event_id = Column(String, nullable=True)

@@ -4,7 +4,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 # Укажите доступы, необходимые для работы с Google Calendar
-SCOPES = ['https://www.googleapis.com/auth/calendar']
+SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events']
 
 print("Скрипт запущен.")
 
@@ -36,14 +36,12 @@ def get_google_credentials():
                 flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
                 print("Файл credentials.json корректен.")
                 print("Создан объект flow.")
-                print("Попытка запустить консоль для авторизации...")
-                auth_url, _ = flow.authorization_url(prompt='consent')
-                print(f"Откройте эту ссылку в браузере: {auth_url}")
-                creds = flow.run_console()
+                print("Попытка запустить локальный сервер для авторизации...")
+                creds = flow.run_local_server(port=8080)  # Использует локальный сервер для авторизации
                 print("Авторизация завершена.")
             except Exception as e:
                 print(f"Ошибка при чтении credentials.json: {e}")
-                print(f"Ошибка при запуске консоли: {e}")
+                print(f"Ошибка при запуске локального сервера: {e}")
         # Сохраняем токены в файл
         if creds:
             print("Сохраняем токен в файл token.json...")
