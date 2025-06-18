@@ -26,9 +26,15 @@ def delete_event(event_id):
     Удаляет событие из Google Calendar.
     :param event_id: ID события.
     """
-    creds = get_google_credentials()
-    service = build('calendar', 'v3', credentials=creds)
-    service.events().delete(calendarId='primary', eventId=event_id).execute()
+    try:
+        creds = get_google_credentials()
+        service = build('calendar', 'v3', credentials=creds)
+        print(f"Attempting to delete event with ID: {event_id}")  # Отладочный вывод
+        service.events().delete(calendarId='primary', eventId=event_id).execute()
+        print(f"Event with ID {event_id} deleted successfully.")  # Отладочный вывод
+    except Exception as e:
+        print(f"Error while deleting event with ID {event_id}: {e}")  # Отладочный вывод
+        raise Exception(f"Ошибка при удалении события из Google Calendar: {e}")
 
 def update_event(event_id, attendees):
     """

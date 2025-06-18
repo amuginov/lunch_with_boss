@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, ForeignKey
 from services.google_calendar_service import create_event, delete_event
 from db.crud import create_lunch_slot, get_user_by_telegram_id, get_user_by_id, get_all_lunch_slots, delete_lunch_slot
+from db.database import SessionLocal
+from db.models import User, LunchSlot
 from datetime import datetime, timedelta
 
 
@@ -26,31 +28,36 @@ async def add_lunch_slot(date: datetime.date, start_time: datetime.time, manager
     """
     try:
         print(f"Creating slot: Date={date}, Start Time={start_time}, Manager ID={manager_id}")  # Отладочный вывод
-        slot = create_lunch_slot(date=date, start_time=start_time, manager_id=manager_id)
-        print(f"Slot created successfully: {slot}")  # Отладочный вывод
 
-        # Получаем данные менеджера
-        manager = get_user_by_id(manager_id)  # Замените get_user_by_telegram_id на get_user_by_id
-        if not manager:
-            raise ValueError(f"Пользователь с ID {manager_id} не найден.")
-        if not manager.email:
-            raise ValueError(f"У менеджера {manager.last_name} {manager.first_name} отсутствует email для интеграции с Google Calendar.")
+        # Создаём новый слот
+        with SessionLocal() as session:
+            slot = create_lunch_slot(date=date, start_time=start_time, manager_id=manager_id)
+            print(f"Slot created successfully: {slot}")  # Отладочный вывод
 
-        # Формируем данные для события
-        summary = "Обед с сотрудниками"
-        description = f"Слот для обеда с менеджером {manager.last_name} {manager.first_name}"
-        start_time_iso = datetime.combine(date, start_time).isoformat()
-        end_time_iso = (datetime.combine(date, start_time) + timedelta(hours=1)).isoformat()
-        attendees = [manager.email]
+            # Получаем данные менеджера
+            manager = session.query(User).filter(User.id == manager_id).first()
+            if not manager:
+                raise ValueError(f"Пользователь с ID {manager_id} не найден.")
+            if not manager.email:
+                raise ValueError(f"У менеджера {manager.last_name} {manager.first_name} отсутствует email для интеграции с Google Calendar.")
 
-        print(f"Creating Google Calendar event: Summary={summary}, Start={start_time_iso}, End={end_time_iso}, Attendees={attendees}")  # Отладочный вывод
+            # Формируем данные для события
+            summary = "Обед с сотрудниками"
+            description = f"Слот для обеда с менеджером {manager.last_name} {manager.first_name}"
+            start_time_iso = datetime.combine(date, start_time).isoformat()
+            end_time_iso = (datetime.combine(date, start_time) + timedelta(hours=1)).isoformat()
+            attendees = [manager.email]
 
-        # Создаём событие в Google Calendar
-        event_id = create_event(summary, description, start_time_iso, end_time_iso, attendees)
-        print(f"Google Calendar event created successfully: Event ID={event_id}")  # Отладочный вывод
+            print(f"Creating Google Calendar event: Summary={summary}, Start={start_time_iso}, End={end_time_iso}, Attendees={attendees}")  # Отладочный вывод
 
-        # Сохраняем event_id в слот
-        slot.event_id = event_id
+            # Создаём событие в Google Calendar
+            event_id = create_event(summary, description, start_time_iso, end_time_iso, attendees)
+            print(f"Google Calendar event created successfully: Event ID={event_id}")  # Отладочный вывод
+
+            # Сохраняем event_id в слот
+            slot.event_id = event_id
+            session.add(slot)  # Привязываем объект к сессии
+            session.commit()
 
         return slot
     except ValueError as e:
@@ -86,14 +93,19 @@ async def remove_lunch_slot(slot_id: int):
         if not slot:
             raise ValueError("Слот не найден.")
 
+        print(f"Slot details: {slot}, Event ID: {slot.event_id}")  # Отладочный вывод
+
         # Удаляем событие из Google Calendar
         if slot.event_id:
+            print(f"Attempting to delete event with ID: {slot.event_id}")  # Отладочный вывод
             delete_event(slot.event_id)
 
         # Удаляем слот из базы данных
         delete_lunch_slot(slot_id)
+        print(f"Slot with ID {slot_id} deleted successfully.")  # Отладочный вывод
         return True
     except Exception as e:
+        print(f"Error while removing slot with ID {slot_id}: {e}")  # Отладочный вывод
         raise Exception(f"Ошибка при удалении слота: {e}")
 
 
