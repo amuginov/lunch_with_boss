@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, ForeignKey
 from services.google_calendar_service import create_event, delete_event
-from db.crud import create_lunch_slot, get_user_by_telegram_id, get_all_lunch_slots, delete_lunch_slot
+from db.crud import create_lunch_slot, get_user_by_telegram_id, get_user_by_id, get_all_lunch_slots, delete_lunch_slot
 from datetime import datetime, timedelta
 
 
@@ -22,16 +22,40 @@ async def get_manager_slots(manager_id: int):
 
 async def add_lunch_slot(date: datetime.date, start_time: datetime.time, manager_id: int):
     """
-    Создаёт новый слот для обеда.
+    Создаёт новый слот для обеда и добавляет событие в Google Calendar.
     """
     try:
         print(f"Creating slot: Date={date}, Start Time={start_time}, Manager ID={manager_id}")  # Отладочный вывод
         slot = create_lunch_slot(date=date, start_time=start_time, manager_id=manager_id)
         print(f"Slot created successfully: {slot}")  # Отладочный вывод
+
+        # Получаем данные менеджера
+        manager = get_user_by_id(manager_id)  # Замените get_user_by_telegram_id на get_user_by_id
+        if not manager:
+            raise ValueError(f"Пользователь с ID {manager_id} не найден.")
+        if not manager.email:
+            raise ValueError(f"У менеджера {manager.last_name} {manager.first_name} отсутствует email для интеграции с Google Calendar.")
+
+        # Формируем данные для события
+        summary = "Обед с сотрудниками"
+        description = f"Слот для обеда с менеджером {manager.last_name} {manager.first_name}"
+        start_time_iso = datetime.combine(date, start_time).isoformat()
+        end_time_iso = (datetime.combine(date, start_time) + timedelta(hours=1)).isoformat()
+        attendees = [manager.email]
+
+        print(f"Creating Google Calendar event: Summary={summary}, Start={start_time_iso}, End={end_time_iso}, Attendees={attendees}")  # Отладочный вывод
+
+        # Создаём событие в Google Calendar
+        event_id = create_event(summary, description, start_time_iso, end_time_iso, attendees)
+        print(f"Google Calendar event created successfully: Event ID={event_id}")  # Отладочный вывод
+
+        # Сохраняем event_id в слот
+        slot.event_id = event_id
+
         return slot
     except ValueError as e:
         print(f"ValueError: {e}")  # Отладочный вывод
-        raise ValueError(str(e))  # Пробрасываем ошибку дублирования
+        raise ValueError(str(e))
     except Exception as e:
         print(f"Exception: {e}")  # Отладочный вывод
         raise Exception(f"Ошибка при создании слота: {e}")

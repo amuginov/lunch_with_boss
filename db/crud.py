@@ -7,6 +7,13 @@ def get_user_by_telegram_id(telegram_id: int):
     with SessionLocal() as session:
         return session.query(User).filter(User.telegram_id == telegram_id).first()
 
+def get_user_by_id(user_id: int):
+    """
+    Получает пользователя по его ID.
+    """
+    with SessionLocal() as session:
+        return session.query(User).filter(User.id == user_id).first()
+
 def create_user(telegram_id: int, last_name: str, first_name: str, middle_name: str, phone_number: str, email: str, role: str):
     try:
         with SessionLocal() as session:

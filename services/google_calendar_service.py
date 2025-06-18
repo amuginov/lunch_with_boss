@@ -4,13 +4,8 @@ from utils.google_auth import get_google_credentials
 def create_event(summary, description, start_time, end_time, attendees):
     """
     Создаёт событие в Google Calendar.
-    :param summary: Название события.
-    :param description: Описание события.
-    :param start_time: Время начала (ISO 8601).
-    :param end_time: Время окончания (ISO 8601).
-    :param attendees: Список email участников.
-    :return: ID созданного события.
     """
+    print(f"Creating event in Google Calendar: Summary={summary}, Start={start_time}, End={end_time}, Attendees={attendees}")  # Отладочный вывод
     creds = get_google_credentials()
     service = build('calendar', 'v3', credentials=creds)
 
@@ -23,6 +18,7 @@ def create_event(summary, description, start_time, end_time, attendees):
     }
 
     created_event = service.events().insert(calendarId='primary', body=event).execute()
+    print(f"Event created successfully: {created_event}")  # Отладочный вывод
     return created_event['id']
 
 def delete_event(event_id):
