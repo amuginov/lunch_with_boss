@@ -12,12 +12,11 @@ def create_event(summary, description, start_time, end_time, attendees):
     event = {
         'summary': summary,
         'description': description,
-        'start': {'dateTime': start_time, 'timeZone': 'UTC'},
-        'end': {'dateTime': end_time, 'timeZone': 'UTC'},
+        'start': {'dateTime': start_time, 'timeZone': 'Europe/Moscow'},  # Указываем часовой пояс
+        'end': {'dateTime': end_time, 'timeZone': 'Europe/Moscow'},      # Указываем часовой пояс
         'attendees': [{'email': email} for email in attendees],
     }
 
-    # Добавляем параметр sendUpdates='all'
     created_event = service.events().insert(calendarId='primary', body=event, sendUpdates='all').execute()
     print(f"Event created successfully: {created_event}")  # Отладочный вывод
     return created_event['id']
