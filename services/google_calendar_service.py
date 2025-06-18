@@ -17,7 +17,8 @@ def create_event(summary, description, start_time, end_time, attendees):
         'attendees': [{'email': email} for email in attendees],
     }
 
-    created_event = service.events().insert(calendarId='primary', body=event).execute()
+    # Добавляем параметр sendUpdates='all'
+    created_event = service.events().insert(calendarId='primary', body=event, sendUpdates='all').execute()
     print(f"Event created successfully: {created_event}")  # Отладочный вывод
     return created_event['id']
 
