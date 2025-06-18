@@ -22,41 +22,18 @@ async def get_manager_slots(manager_id: int):
 
 async def add_lunch_slot(date: datetime.date, start_time: datetime.time, manager_id: int):
     """
-    Создаёт новый слот для обеда и добавляет событие в Google Calendar.
+    Создаёт новый слот для обеда.
     """
     try:
-        # Проверяем пользователя
-        user = get_user_by_telegram_id(manager_id)
-        if not user:
-            raise ValueError("Пользователь не найден. Убедитесь, что вы зарегистрированы.")
-
-        # Создаём слот в базе данных
+        print(f"Creating slot: Date={date}, Start Time={start_time}, Manager ID={manager_id}")  # Отладочный вывод
         slot = create_lunch_slot(date=date, start_time=start_time, manager_id=manager_id)
-
-        # Получаем данные менеджера
-        manager = get_user_by_telegram_id(manager_id)
-        if not manager:
-            raise ValueError(f"Пользователь с Telegram ID {manager_id} не найден.")
-        if not manager.email:
-            raise ValueError(f"У менеджера {manager.last_name} {manager.first_name} отсутствует email для интеграции с Google Calendar.")
-
-        # Формируем данные для события
-        summary = "Обед с сотрудниками"
-        description = f"Слот для обеда с менеджером {manager.last_name} {manager.first_name}"
-        start_time_iso = datetime.combine(date, start_time).isoformat()
-        end_time_iso = (datetime.combine(date, start_time) + timedelta(hours=1)).isoformat()
-        attendees = [manager.email]
-
-        # Создаём событие в Google Calendar
-        event_id = create_event(summary, description, start_time_iso, end_time_iso, attendees)
-
-        # Сохраняем event_id в слот (если нужно)
-        slot.event_id = event_id
-
+        print(f"Slot created successfully: {slot}")  # Отладочный вывод
         return slot
     except ValueError as e:
-        raise ValueError(str(e))
+        print(f"ValueError: {e}")  # Отладочный вывод
+        raise ValueError(str(e))  # Пробрасываем ошибку дублирования
     except Exception as e:
+        print(f"Exception: {e}")  # Отладочный вывод
         raise Exception(f"Ошибка при создании слота: {e}")
 
 

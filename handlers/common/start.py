@@ -1,6 +1,6 @@
 from aiogram import Router
 from aiogram.types import Message
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from db.crud import get_user_by_telegram_id
 from keyboards.admin import admin_keyboard
 from keyboards.manager import manager_keyboard
@@ -24,3 +24,7 @@ async def start_command(message: Message):
             await message.answer("Ваша роль не определена.")
     else:
         await message.answer("Вы не авторизованы. Обратитесь к администратору.")
+
+@router.message(Command(commands=["myid"]))
+async def my_id_command(message: Message):
+    await message.answer(f"Ваш Telegram ID: {message.from_user.id}")

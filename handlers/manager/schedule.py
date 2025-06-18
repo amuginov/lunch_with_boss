@@ -13,6 +13,7 @@ from services.schedule_service import (
 )
 from datetime import datetime
 from db.crud import get_user_by_telegram_id  # Импортируем функцию
+from db.models import User  # Импортируем класс User
 
 router = Router()
 
@@ -32,9 +33,12 @@ async def start_lunch_slot_creation(message: Message, state: FSMContext):
 
 @router.message(F.text == "📋 Мои слоты")
 async def view_slots(message: Message):
-    user = get_user_by_telegram_id(message.from_user.id)  # Убрали await
-    if not user or user.role != "manager":
-        await message.answer("У вас нет доступа к этому функционалу.")
+    user = get_user_by_telegram_id(message.from_user.id)
+    print(f"Callback Telegram ID: {message.from_user.id}, User: {user}, Fields: {vars(user) if user else 'None'}")  # Отладочный вывод
+
+    # Уточнённая проверка объекта пользователя
+    if not user or not isinstance(user, User) or user.role.strip() != "manager":
+        await message.answer(f"Ошибка: Пользователь с Telegram ID {message.from_user.id} не найден или не имеет роли 'manager'.")
         return
 
     manager_slots = await get_manager_slots(user.id)
@@ -70,20 +74,27 @@ async def get_time(callback: CallbackQuery, state: FSMContext):
             return
 
         user = get_user_by_telegram_id(callback.from_user.id)
-        if not user:
-            await callback.message.answer("Вы не авторизованы.")
+        print(f"Callback Telegram ID: {callback.from_user.id}, User: {user}, Role: {user.role}")  # Отладочный вывод
+        print(f"Slot Data: {slot_data}, Start Time: {start_time}")  # Отладочный вывод
+
+        # Уточнённая проверка объекта пользователя
+        if user is None or user.role.strip() != "manager":
+            await callback.message.answer(f"Ошибка: Пользователь с Telegram ID {callback.from_user.id} не найден или не имеет роли 'manager'.")
             return
 
         # Пытаемся создать слот
         try:
-            await add_lunch_slot(
+            slot = await add_lunch_slot(
                 date=slot_data["date"],
                 start_time=start_time,
                 manager_id=user.id
             )
+            print(f"Created Slot: {slot}")  # Отладочный вывод
             await callback.message.answer("Слот успешно добавлен! Событие добавлено в Google Calendar.")
         except ValueError as e:
             await callback.message.answer(f"Ошибка: {e}")
+        except Exception as e:
+            await callback.message.answer(f"Произошла ошибка: {e}")
 
         await return_to_main_menu(callback.message, "manager", manager_keyboard())
         await state.clear()
@@ -97,6 +108,11 @@ async def slot_details(callback: CallbackQuery):
 
     try:
         slot = await get_slot_details(slot_id)
+        print(f"Slot ID: {slot_id}, Slot: {slot}, Manager: {slot.manager if slot else 'None'}")  # Отладочный вывод
+
+        if not slot:
+            await callback.message.answer("Слот не найден.")
+            return
 
         formatted_date = slot.date.strftime("%A, %d %B")
         formatted_time = slot.start_time.strftime("%H:%M")
@@ -104,7 +120,7 @@ async def slot_details(callback: CallbackQuery):
             f"Детали слота:\n"
             f"- День недели: {formatted_date}\n"
             f"- Время: {formatted_time}\n"
-            f"- Менеджер: {slot.manager.full_name}"
+            f"- Менеджер: {slot.manager.last_name} {slot.manager.first_name}"
         )
         await callback.message.answer(response)
     except ValueError as e:
@@ -118,7 +134,9 @@ async def delete_slot(callback: CallbackQuery):
     slot_id = int(callback.data.split(":")[1])
 
     try:
+        print(f"Attempting to delete slot with ID: {slot_id}")  # Отладочный вывод
         await remove_lunch_slot(slot_id)
         await callback.message.answer("Слот успешно удалён. Событие удалено из Google Calendar.")
     except Exception as e:
+        print(f"Error while deleting slot: {e}")  # Отладочный вывод
         await callback.message.answer(f"Произошла ошибка при удалении слота: {e}")

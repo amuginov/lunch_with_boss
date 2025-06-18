@@ -112,3 +112,8 @@ def delete_booking(booking_id: int):
     except Exception as e:
         print(f"Ошибка при удалении бронирования: {e}")
         raise
+
+def debug_users():
+    users = get_all_users()
+    for user in users:
+        print(f"Telegram ID: {user.telegram_id}, Role: {user.role}, Email: {user.email}")
