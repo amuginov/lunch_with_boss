@@ -12,7 +12,7 @@ from services.schedule_service import (
     remove_lunch_slot,
 )
 from datetime import datetime
-from db.crud import get_user_by_telegram_id  # Импортируем функцию
+from db.crud import get_user_by_telegram_id, get_user_by_telegram_id_with_session  # Импортируем функции
 from db.models import User  # Импортируем класс User
 from db.database import SessionLocal  # Импортируем SessionLocal
 
@@ -133,3 +133,23 @@ async def delete_slot(callback: CallbackQuery):
     except Exception as e:
         print(f"Error while deleting slot: {e}")  # Отладочный вывод
         await callback.message.answer(f"Произошла ошибка при удалении слота: {e}")
+
+
+@router.callback_query(F.data.startswith("time:"))
+async def select_time(callback_query: CallbackQuery):
+    try:
+        # Извлекаем Telegram ID пользователя
+        telegram_id = callback_query.from_user.id
+
+        # Получаем пользователя из базы данных
+        user = get_user_by_telegram_id(callback_query.from_user.id)
+
+        if not user:
+            await callback_query.message.answer("Пользователь не найден.")
+            return
+
+        # Логика для обработки выбранного времени
+        selected_time = callback_query.data.split(":")[1]
+        await callback_query.message.answer(f"Вы выбрали время: {selected_time}")
+    except Exception as e:
+        await callback_query.message.answer(f"Произошла ошибка: {e}")

@@ -4,11 +4,18 @@ from .models import User, LunchSlot
 from sqlalchemy.orm import joinedload, Session
 from db.models import RegistrationRequest
 
-def get_user_by_telegram_id(session: Session, telegram_id: int):
+def get_user_by_telegram_id_with_session(session: Session, telegram_id: int):
     """
-    Получает пользователя по Telegram ID.
+    Получает пользователя по Telegram ID с использованием переданного объекта Session.
     """
     return session.query(User).filter(User.telegram_id == telegram_id).first()
+
+def get_user_by_telegram_id(telegram_id: int):
+    """
+    Получает пользователя по Telegram ID, создавая объект Session внутри функции.
+    """
+    with SessionLocal() as session:
+        return session.query(User).filter(User.telegram_id == telegram_id).first()
 
 def get_user_by_id(user_id: int):
     """

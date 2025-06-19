@@ -142,65 +142,15 @@ async def delete_user(message: Message, state: FSMContext):
 async def approve_user(callback_query: CallbackQuery):
     telegram_id = int(callback_query.data.split(":")[1])
 
-    # Извлекаем данные заявки из базы данных
+    # Получаем пользователя из базы данных
     with SessionLocal() as session:
-        user_data = get_registration_request_by_telegram_id(session, telegram_id)
+        user = get_user_by_telegram_id_with_session(session, telegram_id)
 
-    if not user_data:
-        await callback_query.message.answer(f"Ошибка: Заявка на регистрацию с Telegram ID {telegram_id} не найдена.")
+    if not user:
+        await callback_query.message.answer("Пользователь не найден.")
         return
 
-    try:
-        # Создаём пользователя
-        await approve_registration({
-            "telegram_id": user_data.telegram_id,
-            "last_name": user_data.last_name,
-            "first_name": user_data.first_name,
-            "middle_name": user_data.middle_name,
-            "phone_number": user_data.phone_number,
-            "email": user_data.email,
-            "role": user_data.role
-        })
-
-        # Удаляем заявку из базы данных
-        with SessionLocal() as session:
-            delete_registration_request(session, telegram_id)
-
-        await callback_query.message.answer(f"Пользователь {user_data.last_name} {user_data.first_name} зарегистрирован.")
-
-        # Отправляем сообщение новому пользователю с новой клавиатурой
-        if user_data.role == "admin":
-            await callback_query.bot.send_message(
-                chat_id=telegram_id,
-                text="Вы зарегистрированы в чат-боте \"АЛРОСА обед\". Добро пожаловать!",
-                reply_markup=admin_keyboard()
-            )
-        elif user_data.role == "manager":
-            await callback_query.bot.send_message(
-                chat_id=telegram_id,
-                text="Вы зарегистрированы в чат-боте \"АЛРОСА обед\". Добро пожаловать!",
-                reply_markup=manager_keyboard()
-            )
-        elif user_data.role == "user":
-            await callback_query.bot.send_message(
-                chat_id=telegram_id,
-                text="Вы зарегистрированы в чат-боте \"АЛРОСА обед\". Добро пожаловать!",
-                reply_markup=employee_keyboard()
-            )
-
-        # Уведомляем всех администраторов
-        admins = get_all_users()
-        admin_ids = [admin.telegram_id for admin in admins if admin.role == "admin"]
-        for admin_id in admin_ids:
-            await callback_query.bot.send_message(
-                chat_id=admin_id,
-                text=f"Зарегистрирован новый пользователь:\n"
-                     f"Фамилия: {user_data.last_name}\n"
-                     f"Имя: {user_data.first_name}\n"
-                     f"Роль: {user_data.role}"
-            )
-    except Exception as e:
-        await callback_query.message.answer(f"Произошла ошибка при регистрации пользователя: {e}")
+    # Логика для обработки заявки
 
 @router.callback_query(F.data.startswith("reject:"))
 async def reject_user(callback_query: CallbackQuery):
