@@ -14,6 +14,7 @@ from services.schedule_service import (
 from datetime import datetime
 from db.crud import get_user_by_telegram_id  # Импортируем функцию
 from db.models import User  # Импортируем класс User
+from db.database import SessionLocal  # Импортируем SessionLocal
 
 router = Router()
 
@@ -33,23 +34,15 @@ async def start_lunch_slot_creation(message: Message, state: FSMContext):
 
 @router.message(F.text == "📋 Мои слоты")
 async def view_slots(message: Message):
-    user = get_user_by_telegram_id(message.from_user.id)
-    print(f"Callback Telegram ID: {message.from_user.id}, User: {user}, Fields: {vars(user) if user else 'None'}")  # Отладочный вывод
+    with SessionLocal() as session:
+        user = get_user_by_telegram_id(session, message.from_user.id)
 
-    # Уточнённая проверка объекта пользователя
-    if not user or not isinstance(user, User) or user.role.strip() != "manager":
-        await message.answer(f"Ошибка: Пользователь с Telegram ID {message.from_user.id} не найден или не имеет роли 'manager'.")
+    if not user:
+        await message.answer("Пользователь не найден.")
         return
 
-    manager_slots = await get_manager_slots(user.id)
-
-    if not manager_slots:
-        await message.answer("У вас нет активных слотов.")
-        return
-
-    keyboard = generate_slots_keyboard(manager_slots)
-    await message.answer("Ваши слоты:", reply_markup=keyboard)
-
+    # Логика для отображения слотов
+    await message.answer("Список доступных слотов...")
 
 @router.callback_query(F.data.startswith("select_date:"))
 async def get_date(callback: CallbackQuery, state: FSMContext):
