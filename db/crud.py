@@ -1,11 +1,14 @@
 from datetime import date, time, timedelta, datetime
 from .database import SessionLocal
 from .models import User, LunchSlot
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, Session
+from db.models import RegistrationRequest
 
-def get_user_by_telegram_id(telegram_id: int):
-    with SessionLocal() as session:
-        return session.query(User).filter(User.telegram_id == telegram_id).first()
+def get_user_by_telegram_id(session: Session, telegram_id: int):
+    """
+    Получает пользователя по Telegram ID.
+    """
+    return session.query(User).filter(User.telegram_id == telegram_id).first()
 
 def get_user_by_id(user_id: int):
     """
@@ -124,3 +127,35 @@ def debug_users():
     users = get_all_users()
     for user in users:
         print(f"Telegram ID: {user.telegram_id}, Role: {user.role}, Email: {user.email}")
+
+def save_registration_request(session: Session, user_data):
+    """
+    Сохраняет заявку на регистрацию в базе данных.
+    """
+    request = RegistrationRequest(
+        telegram_id=user_data["telegram_id"],
+        last_name=user_data["last_name"],
+        first_name=user_data["first_name"],
+        middle_name=user_data["middle_name"],
+        phone_number=user_data["phone_number"],
+        email=user_data["email"],
+        role=user_data["role"]
+    )
+    session.add(request)
+    session.commit()
+    return request.id
+
+def get_registration_request_by_telegram_id(session: Session, telegram_id):
+    """
+    Получает заявку на регистрацию по Telegram ID.
+    """
+    return session.query(RegistrationRequest).filter(RegistrationRequest.telegram_id == telegram_id).first()
+
+def delete_registration_request(session: Session, telegram_id):
+    """
+    Удаляет заявку на регистрацию по Telegram ID.
+    """
+    request = session.query(RegistrationRequest).filter(RegistrationRequest.telegram_id == telegram_id).first()
+    if request:
+        session.delete(request)
+        session.commit()

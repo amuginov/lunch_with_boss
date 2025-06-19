@@ -4,8 +4,13 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 from states.user_states import UserCreationStates, UserDeletionStates
 from keyboards.admin import admin_keyboard
+from keyboards.manager import manager_keyboard
+from keyboards.employee import employee_keyboard
 from utils.common import return_to_main_menu
-from services.user_service import add_user, list_all_users, remove_user  # Импортируем сервисные функции
+from services.user_service import add_user, list_all_users, remove_user, get_all_users  # Импортируем сервисные функции
+from services.registration_service import approve_registration, reject_registration  # Исправленный импорт
+from db.crud import get_user_by_telegram_id, get_registration_request_by_telegram_id, delete_registration_request  # Исправленный импорт
+from db.database import SessionLocal
 
 router = Router()
 
@@ -133,3 +138,103 @@ async def delete_user(message: Message, state: FSMContext):
     except Exception as e:
         await message.answer(f"Произошла ошибка при удалении пользователя: {e}")
         await state.clear()
+
+@router.callback_query(F.data.startswith("approve:"))
+async def approve_user(callback_query: CallbackQuery):
+    telegram_id = int(callback_query.data.split(":")[1])
+
+    # Извлекаем данные заявки из базы данных
+    with SessionLocal() as session:
+        user_data = get_registration_request_by_telegram_id(session, telegram_id)
+
+    if not user_data:
+        await callback_query.message.answer(f"Ошибка: Заявка на регистрацию с Telegram ID {telegram_id} не найдена.")
+        return
+
+    try:
+        # Создаём пользователя
+        await approve_registration({
+            "telegram_id": user_data.telegram_id,
+            "last_name": user_data.last_name,
+            "first_name": user_data.first_name,
+            "middle_name": user_data.middle_name,
+            "phone_number": user_data.phone_number,
+            "email": user_data.email,
+            "role": user_data.role
+        })
+
+        # Удаляем заявку из базы данных
+        with SessionLocal() as session:
+            delete_registration_request(session, telegram_id)
+
+        await callback_query.message.answer(f"Пользователь {user_data.last_name} {user_data.first_name} зарегистрирован.")
+
+        # Отправляем новую клавиатуру в зависимости от роли пользователя
+        if user_data.role == "admin":
+            await callback_query.bot.send_message(
+                telegram_id,
+                reply_markup=admin_keyboard()
+            )
+        elif user_data.role == "manager":
+            await callback_query.bot.send_message(
+                telegram_id,
+                reply_markup=manager_keyboard()
+            )
+        elif user_data.role == "user":
+            await callback_query.bot.send_message(
+                telegram_id,
+                reply_markup=employee_keyboard()
+            )
+
+        # Уведомляем всех администраторов
+        admins = get_all_users()
+        admin_ids = [admin.telegram_id for admin in admins if admin.role == "admin"]
+        for admin_id in admin_ids:
+            await callback_query.bot.send_message(
+                admin_id,
+                f"Зарегистрирован новый пользователь:\n"
+                f"Фамилия: {user_data.last_name}\n"
+                f"Имя: {user_data.first_name}\n"
+                f"Роль: {user_data.role}"
+            )
+    except Exception as e:
+        await callback_query.message.answer(f"Произошла ошибка при регистрации пользователя: {e}")
+
+@router.callback_query(F.data.startswith("reject:"))
+async def reject_user(callback_query: CallbackQuery):
+    telegram_id = int(callback_query.data.split(":")[1])
+
+    # Извлекаем данные заявки из базы данных
+    with SessionLocal() as session:
+        user_data = get_registration_request_by_telegram_id(session, telegram_id)
+
+    if not user_data:
+        await callback_query.message.answer(f"Ошибка: Заявка на регистрацию с Telegram ID {telegram_id} не найдена.")
+        return
+
+    try:
+        # Удаляем заявку из базы данных
+        with SessionLocal() as session:
+            delete_registration_request(session, telegram_id)
+
+        await callback_query.message.answer(f"Заявка пользователя {user_data.last_name} {user_data.first_name} отклонена.")
+
+        # Отправляем сообщение пользователю
+        await callback_query.bot.send_message(
+            telegram_id,
+            "Вам отказано в регистрации в чат-боте \"АЛРОСА обед\"."
+        )
+
+        # Уведомляем всех администраторов
+        admins = get_all_users()
+        admin_ids = [admin.telegram_id for admin in admins if admin.role == "admin"]
+        for admin_id in admin_ids:
+            await callback_query.bot.send_message(
+                admin_id,
+                f"Отклонена заявка пользователя:\n"
+                f"Фамилия: {user_data.last_name}\n"
+                f"Имя: {user_data.first_name}\n"
+                f"Роль: {user_data.role}"
+            )
+    except Exception as e:
+        await callback_query.message.answer(f"Произошла ошибка при отклонении заявки: {e}")

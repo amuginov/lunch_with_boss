@@ -44,3 +44,15 @@ class LunchSlot(Base):
 
     # Новое поле для хранения ID события Google Calendar
     event_id = Column(String, nullable=True)
+
+class RegistrationRequest(Base):
+    __tablename__ = "registration_requests"
+    id = Column(Integer, primary_key=True, index=True)
+    telegram_id = Column(BigInteger, nullable=False)
+    last_name = Column(String, nullable=False)
+    first_name = Column(String, nullable=False)
+    middle_name = Column(String, nullable=True)
+    phone_number = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    role = Column(String, nullable=False)
+    created_at = Column(TIMESTAMP, default=datetime.utcnow)

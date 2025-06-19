@@ -10,3 +10,12 @@ def main_menu_keyboard():
         ],
         resize_keyboard=True
     )
+
+def registration_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Заявка на регистрацию")],
+            [KeyboardButton(text="Помощь")]
+        ],
+        resize_keyboard=True
+    )
