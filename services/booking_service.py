@@ -1,7 +1,8 @@
 from db.crud import get_all_users, get_all_lunch_slots
 from db.database import SessionLocal
-from db.models import LunchSlot
+from db.models import LunchSlot, User
 from datetime import datetime
+from services.google_calendar_service import create_event, delete_event
 
 
 async def get_available_managers():
@@ -21,19 +22,21 @@ async def get_available_slots(manager_id: int):
     """
     try:
         all_slots = get_all_lunch_slots()
+        print(f"All slots before filtering: {all_slots}")  # Отладочный вывод
         today = datetime.now().date()
         available_slots = [
             slot for slot in all_slots
             if slot.manager_id == manager_id and not slot.is_booked and slot.date >= today
         ]
+        print(f"Available slots for manager {manager_id}: {available_slots}")  # Отладочный вывод
         return available_slots
     except Exception as e:
         raise Exception(f"Ошибка при получении доступных слотов: {e}")
 
 
-async def book_slot(slot_id: int, user_id: int):
+async def book_slot(slot_id: int, user_id: int, user_email: str):
     """
-    Бронирует слот для пользователя.
+    Бронирует слот для пользователя и отправляет приглашение на e-mail.
     """
     with SessionLocal() as session:
         try:
@@ -47,17 +50,24 @@ async def book_slot(slot_id: int, user_id: int):
             slot.booked_by_user_id = user_id
             session.commit()
 
-            # Формируем имя менеджера
-            manager_name = (
-                f"{slot.manager.last_name} {slot.manager.first_name} {slot.manager.middle_name or ''}".strip()
-                if slot.manager else "Неизвестный менеджер"
-            )
+            # Формируем данные для Google Calendar
+            summary = "Обед с менеджером"
+            manager_name = f"{slot.manager.last_name} {slot.manager.first_name} {slot.manager.middle_name or ''}".strip()
+            description = f"Бронирование обеда с менеджером {manager_name}"
+            start_time_iso = datetime.combine(slot.date, slot.start_time).isoformat()
+            end_time_iso = datetime.combine(slot.date, slot.end_time).isoformat()
+            attendees = [user_email]
 
-            # Возвращаем только необходимые данные
+            # Создаём событие в Google Calendar
+            event_id = create_event(summary, description, start_time_iso, end_time_iso, attendees)
+            slot.event_id = event_id
+            session.commit()
+
             return {
                 "date": slot.date,
                 "start_time": slot.start_time,
-                "manager_name": manager_name
+                "manager_name": manager_name,
+                "event_id": event_id
             }
         except Exception as e:
             raise Exception(f"Ошибка при бронировании слота: {e}")
@@ -69,11 +79,13 @@ async def get_user_bookings(user_telegram_id: int):
     """
     with SessionLocal() as session:
         try:
-            bookings = (
-                session.query(LunchSlot)
-                .filter(LunchSlot.booked_by_user_id == user_telegram_id)
-                .all()
-            )
+            # Получаем пользователя по Telegram ID
+            user = session.query(User).filter(User.telegram_id == user_telegram_id).first()
+            if not user:
+                raise ValueError("Пользователь не найден.")
+
+            # Фильтруем слоты по booked_by_user_id
+            bookings = session.query(LunchSlot).filter(LunchSlot.booked_by_user_id == user.id).all()
 
             # Извлекаем данные из объектов до закрытия сессии
             booking_data = [
@@ -93,9 +105,9 @@ async def get_user_bookings(user_telegram_id: int):
             raise Exception(f"Ошибка при получении бронирований пользователя: {e}")
 
 
-async def delete_booking(booking_id: int):
+async def delete_booking(booking_id: int, user_email: str):
     """
-    Удаляет бронирование и освобождает слот.
+    Удаляет бронирование и событие из Google Calendar.
     """
     with SessionLocal() as session:
         try:
@@ -103,9 +115,19 @@ async def delete_booking(booking_id: int):
             if not booking:
                 raise ValueError("Бронирование не найдено.")
 
+            print(f"Before deletion: {booking}")  # Отладочный вывод
+
+            # Удаляем событие из Google Calendar
+            if booking.event_id:
+                delete_event(booking.event_id)
+
+            # Освобождаем слот
             booking.is_booked = False
             booking.booked_by_user_id = None
+            booking.event_id = None
             session.commit()
+
+            print(f"After deletion: {booking}")  # Отладочный вывод
             return True
         except Exception as e:
             raise Exception(f"Ошибка при удалении бронирования: {e}")

@@ -111,7 +111,11 @@ def get_all_lunch_slots():
     """
     try:
         with SessionLocal() as session:
-            return session.query(LunchSlot).options(joinedload(LunchSlot.manager)).all()
+            slots = session.query(LunchSlot).options(joinedload(LunchSlot.manager)).all()
+            for slot in slots:
+                print(f"Slot ID: {slot.id}, Manager ID: {slot.manager_id}, Date: {slot.date}, "
+                      f"Start Time: {slot.start_time}, Is Booked: {slot.is_booked}")
+            return slots
     except Exception as e:
         print(f"Ошибка при получении слотов: {e}")
         raise

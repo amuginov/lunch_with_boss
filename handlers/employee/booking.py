@@ -12,6 +12,8 @@ from services.booking_service import (
     delete_booking,
     get_booking_details,
 )
+from db.database import SessionLocal  # Исправленный импорт
+from db.models import User
 
 router = Router()
 
@@ -61,8 +63,14 @@ async def book_slot_handler(callback: CallbackQuery, state: FSMContext):
     slot_id = int(callback.data.split(":")[1])
 
     try:
-        # Получаем данные о бронировании
-        slot_data = await book_slot(slot_id, callback.from_user.id)
+        # Получаем данные пользователя из базы данных
+        with SessionLocal() as session:
+            user = session.query(User).filter(User.telegram_id == callback.from_user.id).first()
+            if not user or not user.email:
+                raise ValueError("У пользователя отсутствует email. Обратитесь к администратору.")
+
+        # Бронируем слот
+        slot_data = await book_slot(slot_id, user.id, user.email)
 
         # Формируем сообщение об успешном бронировании
         await callback.message.answer(
@@ -102,7 +110,14 @@ async def delete_booking_handler(callback: CallbackQuery):
     booking_id = int(callback.data.split(":")[1])
 
     try:
-        await delete_booking(booking_id)
+        # Получаем данные пользователя из базы данных
+        with SessionLocal() as session:
+            user = session.query(User).filter(User.telegram_id == callback.from_user.id).first()
+            if not user or not user.email:
+                raise ValueError("У пользователя отсутствует email. Обратитесь к администратору.")
+
+        # Удаляем бронирование
+        await delete_booking(booking_id, user.email)
         await callback.message.answer("Бронирование успешно удалено. Слот снова доступен для бронирования.")
     except ValueError as e:
         await callback.message.answer(str(e))
