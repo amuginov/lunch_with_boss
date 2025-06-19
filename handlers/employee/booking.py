@@ -69,7 +69,7 @@ async def book_slot_handler(callback: CallbackQuery, state: FSMContext):
             if not user or not user.email:
                 raise ValueError("У пользователя отсутствует email. Обратитесь к администратору.")
 
-        # Бронируем слот
+        # Передаём e-mail пользователя в функцию бронирования
         slot_data = await book_slot(slot_id, user.id, user.email)
 
         # Формируем сообщение об успешном бронировании
