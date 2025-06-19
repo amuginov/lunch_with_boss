@@ -7,9 +7,6 @@ from datetime import datetime, timedelta
 
 
 async def get_manager_slots(manager_id: int):
-    """
-    Возвращает список слотов для указанного менеджера.
-    """
     try:
         all_slots = get_all_lunch_slots()
         today = datetime.now().date()

@@ -88,21 +88,16 @@ def generate_slots_keyboard(slots):
     """
     inline_keyboard = []
     for slot in slots:
-        # Сокращаем день недели и месяц
-        weekday = WEEKDAY_SHORTCUTS[slot.date.strftime("%A")]
-        month = MONTH_SHORTCUTS[slot.date.strftime("%m")]
-        formatted_date = f"{weekday}, {slot.date.day} {month}"
+        formatted_date = slot.date.strftime("%d.%m.%Y")
         formatted_time = slot.start_time.strftime("%H:%M")
         button_text = f"{formatted_date}, {formatted_time}"
 
-        # Кнопка для деталей слота
         detail_button = InlineKeyboardButton(
             text=button_text,
             callback_data=f"slot_detail:{slot.id}"
         )
-        # Кнопка для удаления слота
         delete_button = InlineKeyboardButton(
-            text="❌",  # Используем символ вместо текста для минимального размера
+            text="❌",
             callback_data=f"delete_slot:{slot.id}"
         )
         inline_keyboard.append([detail_button, delete_button])
