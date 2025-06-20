@@ -38,8 +38,13 @@ async def get_first_name(message: Message, state: FSMContext):
 async def get_middle_name(message: Message, state: FSMContext):
     middle_name = message.text if message.text.lower() != "нет" else None
     await state.update_data(middle_name=middle_name)
-    await message.answer("Введите ваш номер телефона:")
-    await state.set_state(UserCreationStates.waiting_for_phone_number)
+
+    # Автоматически подставляем номер телефона
+    await state.update_data(phone_number="0000000000")
+
+    # Переходим сразу к вводу email
+    await message.answer("Введите ваш email (обязательно):")
+    await state.set_state(UserCreationStates.waiting_for_email)
 
 @router.message(UserCreationStates.waiting_for_phone_number)
 async def get_phone_number(message: Message, state: FSMContext):
