@@ -143,6 +143,7 @@ def save_registration_request(session: Session, user_data):
     """
     Сохраняет заявку на регистрацию в базе данных.
     """
+    print(f"Saving registration request: {user_data}")  # Отладочный вывод
     request = RegistrationRequest(
         telegram_id=user_data["telegram_id"],
         last_name=user_data["last_name"],
@@ -154,13 +155,17 @@ def save_registration_request(session: Session, user_data):
     )
     session.add(request)
     session.commit()
+    print(f"Registration request saved: {request}")  # Отладочный вывод
     return request.id
 
 def get_registration_request_by_telegram_id(session: Session, telegram_id):
     """
     Получает заявку на регистрацию по Telegram ID.
     """
-    return session.query(RegistrationRequest).filter(RegistrationRequest.telegram_id == telegram_id).first()
+    print(f"Fetching registration request for Telegram ID: {telegram_id}")  # Отладочный вывод
+    request = session.query(RegistrationRequest).filter(RegistrationRequest.telegram_id == telegram_id).first()
+    print(f"Registration request fetched: {request}")  # Отладочный вывод
+    return request
 
 def delete_registration_request(session: Session, telegram_id):
     """

@@ -9,7 +9,7 @@ from keyboards.employee import employee_keyboard
 from utils.common import return_to_main_menu
 from services.user_service import add_user, list_all_users, remove_user, get_all_users  # Импортируем сервисные функции
 from services.registration_service import approve_registration, reject_registration  # Исправленный импорт
-from db.crud import get_user_by_telegram_id, get_registration_request_by_telegram_id, delete_registration_request  # Исправленный импорт
+from db.crud import get_user_by_telegram_id, get_registration_request_by_telegram_id, delete_registration_request, get_user_by_telegram_id_with_session  # Исправленный импорт
 from db.database import SessionLocal
 
 router = Router()
@@ -142,15 +142,33 @@ async def delete_user(message: Message, state: FSMContext):
 async def approve_user(callback_query: CallbackQuery):
     telegram_id = int(callback_query.data.split(":")[1])
 
-    # Получаем пользователя из базы данных
+    # Получаем данные заявки из базы данных
     with SessionLocal() as session:
-        user = get_user_by_telegram_id_with_session(session, telegram_id)
+        user_data = get_registration_request_by_telegram_id(session, telegram_id)
 
-    if not user:
-        await callback_query.message.answer("Пользователь не найден.")
+    if not user_data:
+        await callback_query.message.answer("Ошибка: Заявка на регистрацию не найдена.")
         return
 
-    # Логика для обработки заявки
+    try:
+        # Регистрируем пользователя
+        await approve_registration({
+            "telegram_id": user_data.telegram_id,
+            "last_name": user_data.last_name,
+            "first_name": user_data.first_name,
+            "middle_name": user_data.middle_name,
+            "phone_number": user_data.phone_number,
+            "email": user_data.email,
+            "role": user_data.role
+        })
+
+        # Удаляем заявку из базы данных
+        with SessionLocal() as session:
+            delete_registration_request(session, telegram_id)
+
+        await callback_query.message.answer(f"Пользователь {user_data.last_name} {user_data.first_name} успешно зарегистрирован.")
+    except Exception as e:
+        await callback_query.message.answer(f"Произошла ошибка при регистрации пользователя: {e}")
 
 @router.callback_query(F.data.startswith("reject:"))
 async def reject_user(callback_query: CallbackQuery):

@@ -14,7 +14,7 @@ def main_menu_keyboard():
 def registration_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="Заявка на регистрацию")],
+            [KeyboardButton(text="Регистрация")],  # Изменено название кнопки
             [KeyboardButton(text="Помощь")]
         ],
         resize_keyboard=True

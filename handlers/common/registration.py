@@ -9,7 +9,15 @@ from utils.common import return_to_main_menu
 
 router = Router()
 
-@router.message(F.text == "Заявка на регистрацию")
+def role_selection_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Сотрудник", callback_data="role_user")],
+            [InlineKeyboardButton(text="Руководитель", callback_data="role_manager")],
+        ]
+    )
+
+@router.message(F.text == "Регистрация")  # Обновлено название кнопки
 async def start_registration(message: Message, state: FSMContext):
     await message.answer("Введите вашу фамилию:")
     await state.set_state(UserCreationStates.waiting_for_last_name)
@@ -53,7 +61,6 @@ async def get_email(message: Message, state: FSMContext):
 @router.callback_query(UserCreationStates.waiting_for_role)
 async def get_role(callback_query: CallbackQuery, state: FSMContext):
     role_mapping = {
-        "role_admin": "admin",
         "role_manager": "manager",
         "role_user": "user"
     }
