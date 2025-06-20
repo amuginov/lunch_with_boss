@@ -155,8 +155,6 @@ async def approve_user(callback_query: CallbackQuery):
         await callback_query.message.answer("Ошибка: Заявка на регистрацию не найдена.")
         return
 
-    print(f"Approving user: {user_data}")  # Отладочный вывод
-
     try:
         # Регистрируем пользователя
         await approve_registration({
@@ -173,45 +171,22 @@ async def approve_user(callback_query: CallbackQuery):
         with SessionLocal() as session:
             delete_registration_request(session, telegram_id)
 
+        # Отправляем сообщение новому пользователю
+        role_keyboards = {
+            "admin": admin_keyboard(),
+            "manager": manager_keyboard(),
+            "user": employee_keyboard()
+        }
+
+        keyboard = role_keyboards.get(user_data.role, None)
+
+        if keyboard:
+            await callback_query.bot.send_message(
+                chat_id=user_data.telegram_id,
+                text=f"Вы успешно зарегистрированы. Продуктивных встреч и приятных обедов!",
+                reply_markup=keyboard
+            )
+
         await callback_query.message.answer(f"Пользователь {user_data.last_name} {user_data.first_name} успешно зарегистрирован.")
     except Exception as e:
         await callback_query.message.answer(f"Произошла ошибка при регистрации пользователя: {e}")
-
-@router.callback_query(F.data.startswith("reject:"))
-async def reject_user(callback_query: CallbackQuery):
-    telegram_id = int(callback_query.data.split(":")[1])
-
-    # Извлекаем данные заявки из базы данных
-    with SessionLocal() as session:
-        user_data = get_registration_request_by_telegram_id(session, telegram_id)
-
-    if not user_data:
-        await callback_query.message.answer(f"Ошибка: Заявка на регистрацию с Telegram ID {telegram_id} не найдена.")
-        return
-
-    try:
-        # Удаляем заявку из базы данных
-        with SessionLocal() as session:
-            delete_registration_request(session, telegram_id)
-
-        await callback_query.message.answer(f"Заявка пользователя {user_data.last_name} {user_data.first_name} отклонена.")
-
-        # Отправляем сообщение пользователю
-        await callback_query.bot.send_message(
-            telegram_id,
-            "Вам отказано в регистрации в чат-боте \"АЛРОСА обед\"."
-        )
-
-        # Уведомляем всех администраторов
-        admins = get_all_users()
-        admin_ids = [admin.telegram_id for admin in admins if admin.role == "admin"]
-        for admin_id in admin_ids:
-            await callback_query.bot.send_message(
-                admin_id,
-                f"Отклонена заявка пользователя:\n"
-                f"Фамилия: {user_data.last_name}\n"
-                f"Имя: {user_data.first_name}\n"
-                f"Роль: {user_data.role}"
-            )
-    except Exception as e:
-        await callback_query.message.answer(f"Произошла ошибка при отклонении заявки: {e}")

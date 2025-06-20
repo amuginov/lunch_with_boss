@@ -7,7 +7,7 @@ def admin_keyboard():
             [KeyboardButton(text="Добавить пользователя")],
             [KeyboardButton(text="Список пользователей")],
             [KeyboardButton(text="Удалить пользователя")],
-            [KeyboardButton(text="Помощь")],  # Добавляем кнопку "Помощь"
+            [KeyboardButton(text="Помощь")],
         ],
         resize_keyboard=True
     )
