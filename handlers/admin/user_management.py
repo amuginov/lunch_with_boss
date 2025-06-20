@@ -155,6 +155,8 @@ async def approve_user(callback_query: CallbackQuery):
         await callback_query.message.answer("Ошибка: Заявка на регистрацию не найдена.")
         return
 
+    print(f"Approving user: {user_data}")  # Отладочный вывод
+
     try:
         # Регистрируем пользователя
         await approve_registration({
