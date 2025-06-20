@@ -10,6 +10,7 @@ def employee_keyboard() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text="🍽 Забронировать обед")],
             [KeyboardButton(text="📋 Мои бронирования")],
+            [KeyboardButton(text="Помощь")],  # Добавляем кнопку "Помощь"
         ],
         resize_keyboard=True,
         input_field_placeholder="Выберите действие:"
