@@ -3,7 +3,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 from aiogram.fsm.context import FSMContext
 from states.user_states import LunchBookingStates
 from keyboards.employee import generate_booking_keyboard, generate_slots_keyboard, employee_keyboard
-from utils.common import return_to_main_menu
+from utils.common import return_to_main_menu, WEEKDAY_SHORTCUTS, MONTH_SHORTCUTS
 from services.booking_service import (
     get_available_managers,
     get_available_slots,

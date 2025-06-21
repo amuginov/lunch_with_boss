@@ -1,4 +1,3 @@
-
 # Словари для сокращения дней недели и месяцев
 WEEKDAY_SHORTCUTS = {
     "понедельник": "пн",
@@ -27,9 +26,9 @@ MONTH_SHORTCUTS = {
 
 async def return_to_main_menu(message, user_role, keyboard):
     """
-    Возвращает пользователя в главное меню в зависимости от его роли.
+    Обновляет клавиатуру для пользователя без отправки сообщения.
     :param message: Объект сообщения.
     :param user_role: Роль пользователя (manager, admin, employee).
     :param keyboard: Клавиатура для роли пользователя.
     """
-    await message.answer(f"Возвращаюсь в главное меню для роли {user_role}.", reply_markup=keyboard)
+    await message.edit_reply_markup(reply_markup=keyboard)
