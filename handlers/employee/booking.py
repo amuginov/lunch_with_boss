@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup
 from aiogram.fsm.context import FSMContext
 from states.user_states import LunchBookingStates
 from keyboards.employee import generate_booking_keyboard, generate_slots_keyboard, employee_keyboard
@@ -97,6 +97,7 @@ async def book_slot_handler(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         await callback.message.answer(f"Произошла ошибка при бронировании: {e}")
     finally:
+        # Вызов функции return_to_main_menu
         await return_to_main_menu(callback.message, "employee", employee_keyboard())
         await state.clear()
 
@@ -134,6 +135,8 @@ async def delete_booking_handler(callback: CallbackQuery):
         # Удаляем бронирование
         await delete_booking(booking_id, user.email)
         await callback.message.answer("Бронирование успешно удалено. Слот снова доступен для бронирования.")
+        # Вызов функции return_to_main_menu
+        await return_to_main_menu(callback.message, "employee", employee_keyboard())
     except ValueError as e:
         await callback.message.answer(str(e))
     except Exception as e:

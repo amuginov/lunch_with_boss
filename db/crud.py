@@ -53,6 +53,13 @@ def delete_user_by_telegram_id(telegram_id: int):
             user = session.query(User).filter(User.telegram_id == telegram_id).first()
             if not user:
                 raise ValueError(f"Пользователь с Telegram ID {telegram_id} не найден.")
+
+            # Удаляем связанные данные из таблицы registration_requests
+            registration_request = session.query(RegistrationRequest).filter(RegistrationRequest.telegram_id == telegram_id).first()
+            if registration_request:
+                session.delete(registration_request)
+
+            # Удаляем пользователя
             session.delete(user)
             session.commit()
             return True

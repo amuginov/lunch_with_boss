@@ -24,11 +24,17 @@ MONTH_SHORTCUTS = {
     "12": "дек",
 }
 
+from aiogram.types import ReplyKeyboardMarkup
+
 async def return_to_main_menu(message, user_role, keyboard):
     """
-    Обновляет клавиатуру для пользователя без отправки сообщения.
+    Обновляет ReplyKeyboardMarkup для пользователя путем отправки нового сообщения.
     :param message: Объект сообщения.
     :param user_role: Роль пользователя (manager, admin, employee).
     :param keyboard: Клавиатура для роли пользователя.
     """
-    await message.edit_reply_markup(reply_markup=keyboard)
+    print(f"Keyboard type: {type(keyboard)}")  # Отладочный вывод
+    if isinstance(keyboard, ReplyKeyboardMarkup):
+        await message.answer("Возвращаюсь в главное меню...", reply_markup=keyboard)
+    else:
+        raise ValueError(f"Для обновления клавиатуры требуется объект ReplyKeyboardMarkup, получен: {type(keyboard)}")
