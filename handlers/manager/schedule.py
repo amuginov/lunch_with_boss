@@ -101,7 +101,7 @@ async def get_time(callback: CallbackQuery, state: FSMContext):
                 manager_id=user.id
             )
             print(f"Created Slot: {slot}")  # Отладочный вывод
-            await callback.message.answer("Слот успешно добавлен! Событие добавлено в Google Calendar.")
+            await callback.message.answer("Слот успешно добавлен! Событие добавлено в Ваш календарь. Не забудьте принять это приглашение в Вашем календаре.")
         except ValueError as e:
             await callback.message.answer(f"Ошибка: {e}")
         except Exception as e:

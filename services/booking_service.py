@@ -46,8 +46,6 @@ async def book_slot(slot_id: int, user_id: int, user_email: str):
                 raise ValueError("Слот не найден или уже забронирован.")
 
             # Проверяем e-mail пользователя
-            print(f"User e-mail: {user_email}")  # Отладочный вывод
-
             if not user_email:
                 raise ValueError("У пользователя отсутствует e-mail. Приглашение не может быть отправлено.")
 
@@ -64,11 +62,9 @@ async def book_slot(slot_id: int, user_id: int, user_email: str):
             end_time_iso = datetime.combine(slot.date, slot.end_time).isoformat()
 
             # Формируем список участников
-            attendees = [user_email]  # Добавляем e-mail пользователя
+            attendees = [user_email]
             if slot.manager.email:
-                attendees.append(slot.manager.email)  # Добавляем e-mail менеджера
-
-            print(f"Creating event with attendees: {attendees}")  # Отладочный вывод
+                attendees.append(slot.manager.email)
 
             # Создаём событие в Google Calendar
             event_id = create_event(summary, description, start_time_iso, end_time_iso, attendees)
@@ -79,6 +75,7 @@ async def book_slot(slot_id: int, user_id: int, user_email: str):
                 "date": slot.date,
                 "start_time": slot.start_time,
                 "manager_name": manager_name,
+                "manager_telegram_id": slot.manager.telegram_id,  # Добавляем Telegram ID менеджера
                 "event_id": event_id
             }
         except Exception as e:

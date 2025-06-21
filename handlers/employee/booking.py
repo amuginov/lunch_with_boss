@@ -77,6 +77,21 @@ async def book_slot_handler(callback: CallbackQuery, state: FSMContext):
             f"Вы успешно забронировали обед с менеджером {slot_data['manager_name']} "
             f"на {slot_data['date']} в {slot_data['start_time']}."
         )
+
+        # Отправляем уведомление менеджеру
+        manager_telegram_id = slot_data["manager_telegram_id"]
+        weekday = WEEKDAY_SHORTCUTS[slot_data["date"].strftime("%A").lower()]
+        month = MONTH_SHORTCUTS[slot_data["date"].strftime("%m")]
+        formatted_date = f"{weekday}, {slot_data['date'].day} {month}"
+        formatted_time = slot_data["start_time"].strftime("%H:%M")
+
+        await callback.bot.send_message(
+            chat_id=manager_telegram_id,
+            text=(
+                f"{user.last_name} {user.first_name} {user.middle_name or ''} забронировал обед с Вами "
+                f"на {formatted_date}, {formatted_time}."
+            )
+        )
     except ValueError as e:
         await callback.message.answer(str(e))
     except Exception as e:
