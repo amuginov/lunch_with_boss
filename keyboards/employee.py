@@ -29,7 +29,9 @@ def generate_booking_keyboard(bookings):
         month = MONTH_SHORTCUTS[booking["date"].strftime("%m")]
         formatted_date = f"{weekday}, {booking['date'].day} {month}"
         formatted_time = booking["start_time"].strftime("%H:%M")
-        button_text = f"{formatted_date}, {formatted_time}, {booking['manager_name']}"
+        
+        # Убираем имя менеджера из текста кнопки
+        button_text = f"{formatted_date}, {formatted_time}"
 
         # Кнопка для деталей бронирования
         detail_button = InlineKeyboardButton(

@@ -54,6 +54,9 @@ def delete_user_by_telegram_id(telegram_id: int):
             if not user:
                 raise ValueError(f"Пользователь с Telegram ID {telegram_id} не найден.")
 
+            # Удаляем связанные записи из таблицы lunch_slots
+            session.query(LunchSlot).filter(LunchSlot.manager_id == user.id).delete()
+
             # Удаляем связанные данные из таблицы registration_requests
             registration_request = session.query(RegistrationRequest).filter(RegistrationRequest.telegram_id == telegram_id).first()
             if registration_request:

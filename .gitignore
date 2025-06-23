@@ -8,3 +8,4 @@ read_files.pyclient_secret_*.json
 credentials.json
 token.json
 **/__pycache__/
+deploy_plan.md
