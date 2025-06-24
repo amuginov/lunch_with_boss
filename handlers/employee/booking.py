@@ -63,28 +63,27 @@ async def book_slot_handler(callback: CallbackQuery, state: FSMContext):
     slot_id = int(callback.data.split(":")[1])
 
     try:
-        # Получаем данные пользователя из базы данных
         with SessionLocal() as session:
             user = session.query(User).filter(User.telegram_id == callback.from_user.id).first()
             if not user or not user.email:
                 raise ValueError("У пользователя отсутствует email. Обратитесь к администратору.")
 
-        # Передаём e-mail пользователя в функцию бронирования
         slot_data = await book_slot(slot_id, user.id, user.email)
+
+        # Форматируем дату и время
+        weekday = WEEKDAY_SHORTCUTS[slot_data["date"].strftime("%A").lower()]
+        month = MONTH_SHORTCUTS[slot_data["date"].strftime("%m")]
+        formatted_date = f"{weekday}, {slot_data['date'].day}, {month}"
+        formatted_time = slot_data["start_time"].strftime("%H:%M")
 
         # Формируем сообщение об успешном бронировании
         await callback.message.answer(
             f"Вы успешно забронировали обед с менеджером {slot_data['manager_name']} "
-            f"на {slot_data['date']} в {slot_data['start_time']}."
+            f"на {formatted_date}, {formatted_time}."
         )
 
         # Отправляем уведомление менеджеру
         manager_telegram_id = slot_data["manager_telegram_id"]
-        weekday = WEEKDAY_SHORTCUTS[slot_data["date"].strftime("%A").lower()]
-        month = MONTH_SHORTCUTS[slot_data["date"].strftime("%m")]
-        formatted_date = f"{weekday}, {slot_data['date'].day} {month}"
-        formatted_time = slot_data["start_time"].strftime("%H:%M")
-
         await callback.bot.send_message(
             chat_id=manager_telegram_id,
             text=(
@@ -97,7 +96,6 @@ async def book_slot_handler(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         await callback.message.answer(f"Произошла ошибка при бронировании: {e}")
     finally:
-        # Вызов функции return_to_main_menu
         await return_to_main_menu(callback.message, "employee", employee_keyboard())
         await state.clear()
 
