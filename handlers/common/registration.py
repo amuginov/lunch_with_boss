@@ -105,5 +105,5 @@ async def get_role(callback_query: CallbackQuery, state: FSMContext):
             )
         )
 
-    await callback_query.message.answer("Ваша заявка отправлена на рассмотрение администраторам.")
+    await callback_query.message.answer(reply_markup=role_selection_keyboard())
     await state.clear()

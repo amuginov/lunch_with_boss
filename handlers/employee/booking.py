@@ -96,7 +96,8 @@ async def book_slot_handler(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         await callback.message.answer(f"Произошла ошибка при бронировании: {e}")
     finally:
-        await return_to_main_menu(callback.message, "employee", employee_keyboard())
+        # Удаляем сообщение "Возвращаюсь в главное меню..."
+        await callback.message.answer(reply_markup=employee_keyboard())
         await state.clear()
 
 
@@ -133,12 +134,13 @@ async def delete_booking_handler(callback: CallbackQuery):
         # Удаляем бронирование
         await delete_booking(booking_id, user.email)
         await callback.message.answer("Бронирование успешно удалено. Слот снова доступен для бронирования.")
-        # Вызов функции return_to_main_menu
-        await return_to_main_menu(callback.message, "employee", employee_keyboard())
     except ValueError as e:
         await callback.message.answer(str(e))
     except Exception as e:
         await callback.message.answer(f"Произошла ошибка при удалении бронирования: {e}")
+    finally:
+        # Удаляем сообщение "Возвращаюсь в главное меню..."
+        await callback.message.answer(reply_markup=employee_keyboard())
 
 
 @router.callback_query(F.data.startswith("detail_booking:"))

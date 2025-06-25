@@ -102,13 +102,12 @@ async def get_time(callback: CallbackQuery, state: FSMContext):
             )
             print(f"Created Slot: {slot}")  # Отладочный вывод
             await callback.message.answer("Слот успешно добавлен! Событие добавлено в Ваш календарь. Не забудьте принять это приглашение в Вашем календаре.")
+            await callback.message.answer("Выберите действие:", reply_markup=manager_keyboard())
+            await state.clear()
         except ValueError as e:
             await callback.message.answer(f"Ошибка: {e}")
         except Exception as e:
             await callback.message.answer(f"Произошла ошибка: {e}")
-
-        await return_to_main_menu(callback.message, "manager", manager_keyboard())
-        await state.clear()
     except Exception as e:
         await callback.message.answer(f"Произошла ошибка: {e}")
 
