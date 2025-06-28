@@ -24,6 +24,9 @@ MONTH_SHORTCUTS = {
     "12": "дек",
 }
 
+import locale
+locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
+
 from aiogram.types import ReplyKeyboardMarkup
 
 async def return_to_main_menu(message, user_role, keyboard):

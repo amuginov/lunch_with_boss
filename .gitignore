@@ -9,3 +9,4 @@ credentials.json
 token.json
 **/__pycache__/
 deploy_plan.md
+tmp_credentials/
